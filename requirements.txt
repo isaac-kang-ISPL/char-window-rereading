@@ -1,0 +1,18 @@
+# Python 3.11 (the stored results were computed with 3.11; 3.12+ sums floats with compensation and changes the last
+# digit of CB / UB averages, not the correct-image counts). GPU stages need a CUDA build of torch.
+# A C++17 compiler (g++) builds the segmentation and curve-thinning kernels on first use (tools/rescore/segment.py · region.py);
+# without one both fall back to the same-result Python / scikit-image paths.
+numpy
+scipy
+scikit-image==0.26.0   # segment.py: the C++ flood ports 0.26's compact watershed; the fallback calls it (0.25 seeds the queue at -inf)
+opencv-python-headless
+pillow
+lmdb
+pyyaml
+torch
+transformers
+# manuscript experiments only
+scikit-learn==1.6.1     # learned rerankers of the selection-gap table (the stored result used 1.6.1)
+rapidfuzz
+# tests (tests/test_rescore_core.py)
+pytest

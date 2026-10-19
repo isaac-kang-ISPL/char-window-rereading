@@ -1,0 +1,18 @@
+Character-Window Re-Reading
+Copyright 2026 The authors of Character-Window Re-Reading
+
+This software is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This software contains code adapted from OpenOCR (https://github.com/Topdu/OpenOCR), which is licensed under the
+Apache License, Version 2.0:
+
+  openrec/                   recognizer models and post-processing; some files were modified and some were added
+  configs/rec/               recognizer configuration, modified
+  strtrain/engine/config.py  configuration loader (OpenOCR tools/engine/config.py), modified
+  strtrain/utils/            character dictionary (OpenOCR tools/utils/EN_symbol_dict.txt), unchanged
+
+These files remain under the Apache License, Version 2.0; a copy is in LICENSE and in openrec/LICENSE.
+
+tools/rescore/compact_watershed.cpp is a C++ port of the compact watershed of scikit-image
+(https://github.com/scikit-image/scikit-image), which is licensed under the BSD 3-Clause License. The upstream
+copyright and license notice is retained in tools/rescore/compact_watershed.LICENSE.

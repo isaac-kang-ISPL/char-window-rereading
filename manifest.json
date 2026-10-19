@@ -1,0 +1,537 @@
+{
+  "component": "legit-paper",
+  "commit": "3848b58638b4a89f66232f59e2020603f7dccb33",
+  "dirty": [],
+  "files": [
+    {
+      "path": "DATA_FILES.json",
+      "sha256": "3ea3ac6a0363b117b4a81ac4ab730ee666abb0cf273b8d3f32e26e1ddb3acc3e"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "NOTICE",
+      "sha256": "b374bb5935ab75baaae0b57c8455665e6de224a9fb2c0c5045f94f01c34e0b0b"
+    },
+    {
+      "path": "README.md",
+      "sha256": "7285cb2883286bf5bcf464cad2c218103a9c9f517a14b3c90cab5595881bda67"
+    },
+    {
+      "path": "assets/fig1_framework.png",
+      "sha256": "e6ea27468a07bd28614529f6ff2ee4b144b34bb914ec72b413c8514b56e1a368"
+    },
+    {
+      "path": "openrec/LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "openrec/modeling/__init__.py",
+      "sha256": "2a88331c4c34e61ab65185302f7456c957efa32d82980767a7f84ed2b3efb4a2"
+    },
+    {
+      "path": "openrec/modeling/base_recognizer.py",
+      "sha256": "a31548b34a71441c808902a36bb08979523abd14389f84e52df6da94923301f0"
+    },
+    {
+      "path": "openrec/modeling/cmer_modeling/modeling_cmer.py",
+      "sha256": "f8aa962332c159924c9a6c4e07f0814306fc288664707eabdb0f7bb85b240cdd"
+    },
+    {
+      "path": "openrec/modeling/common.py",
+      "sha256": "82903551fbbac55d15c4dbedf2a4325a3f89ef0d80d7cc774894d6e87ead3ba1"
+    },
+    {
+      "path": "openrec/modeling/decoders/__init__.py",
+      "sha256": "bf8f2700e2c1259512241009aae15fc75cfaeb9ca54185db2d643daf9930c0bb"
+    },
+    {
+      "path": "openrec/modeling/decoders/abinet_decoder.py",
+      "sha256": "e453370c5f2590a72dedd2df231b7a9d3dbdfaaad32f04381fc3f96190212dea"
+    },
+    {
+      "path": "openrec/modeling/decoders/aster_decoder.py",
+      "sha256": "443da937cf5c03a36cbd87a5c43b4ade41ed8c168a18bfb0c08c402f532ea512"
+    },
+    {
+      "path": "openrec/modeling/decoders/bus_decoder.py",
+      "sha256": "084575a1e54fdfb2ac476419105841c35236e98f8adf28521fdf447933c83bc4"
+    },
+    {
+      "path": "openrec/modeling/decoders/cam_decoder.py",
+      "sha256": "ca5a979f492db13250b22e36c21f041d6c3f83e9e1dc0f705c1f96cac11e83ff"
+    },
+    {
+      "path": "openrec/modeling/decoders/cdistnet_decoder.py",
+      "sha256": "752af2c06988d8064859a0d7ddb94560cde0b36f0ee749a8cb1abe2d88be2752"
+    },
+    {
+      "path": "openrec/modeling/decoders/cppd_decoder.py",
+      "sha256": "9834b4764a3e6abd8ab706763dfafc47618693985fcbd180080161f5ad840676"
+    },
+    {
+      "path": "openrec/modeling/decoders/ctc_decoder.py",
+      "sha256": "394d1da8b50c2e348ed1334e189fac5f0d55952086e4bca04ca29140b5a70dca"
+    },
+    {
+      "path": "openrec/modeling/decoders/dan_decoder.py",
+      "sha256": "2375b94cdb6589c603bffd12b0303fd85abef1f8ce736c178cc94af0b519a0bb"
+    },
+    {
+      "path": "openrec/modeling/decoders/dptr_parseq_clip_b_decoder.py",
+      "sha256": "18eb1bf27388cbc45dadfca6090d4b4d417bdee607620498be31ee6d67919aab"
+    },
+    {
+      "path": "openrec/modeling/decoders/igtr_decoder.py",
+      "sha256": "eeb58039b3a66f9c064bfeb80c2f033df4ed2f979280bf6e0bf7b700b7e1a746"
+    },
+    {
+      "path": "openrec/modeling/decoders/lister_decoder.py",
+      "sha256": "86e211e160c02b3131605dec488977bb4b8dd291f82da0ea393141e5226b1b95"
+    },
+    {
+      "path": "openrec/modeling/decoders/lpv_decoder.py",
+      "sha256": "0bbc88193f93e9b475acd1093c2c45e4b29ae744f4265c66c012a7d55c1d8685"
+    },
+    {
+      "path": "openrec/modeling/decoders/matrn_decoder.py",
+      "sha256": "46203535a1d05342e04aa4e25950aacdafc113ad3d41f88eb76c9c94f3bf38e2"
+    },
+    {
+      "path": "openrec/modeling/decoders/mdiff_decoder.py",
+      "sha256": "5a579f97b534a60dcce26c4e37fdb2dca491809b0820986d19db18e609e79448"
+    },
+    {
+      "path": "openrec/modeling/decoders/mgp_decoder.py",
+      "sha256": "ea2d4ae3c85d65cab1e3a5843cecd0c25eeaaafb0017da83151f244a0b1d87b0"
+    },
+    {
+      "path": "openrec/modeling/decoders/nrtr_decoder.py",
+      "sha256": "587b74a78fc716bf32f62c69598e2387ce450ccb0c53793f8b413f4e0b5999e9"
+    },
+    {
+      "path": "openrec/modeling/decoders/ote_decoder.py",
+      "sha256": "995333df5ac9dbc2aeff1dfae2d14668571f7114f14b7a4607b71d6cd556a42f"
+    },
+    {
+      "path": "openrec/modeling/decoders/parseq_decoder.py",
+      "sha256": "96aa8d809925704d51412b9b9867c8d015e5f3203aab2c543f96b227ec4e5f8d"
+    },
+    {
+      "path": "openrec/modeling/decoders/rctc_decoder.py",
+      "sha256": "ce20cd2145f6321c87021b07b67de86f24cdb7ea0a20304c65676352c72d05ac"
+    },
+    {
+      "path": "openrec/modeling/decoders/robustscanner_decoder.py",
+      "sha256": "c46daac5b9b81f91b10fb1cee587eb64afcc7c49fb404f1ca7145f6fa41e7963"
+    },
+    {
+      "path": "openrec/modeling/decoders/sar_decoder.py",
+      "sha256": "c453b18b91ae675c2bb63e0d3561eb4c98250b08c3fd75272e4ac1af8b59cf1d"
+    },
+    {
+      "path": "openrec/modeling/decoders/smtr_decoder.py",
+      "sha256": "9e9bb059990d369ea3574f0ca0f277d663b544bd9ec4dabc6ac99481e4fca0ab"
+    },
+    {
+      "path": "openrec/modeling/decoders/smtr_decoder_nattn.py",
+      "sha256": "a6a7ffe26feb0e1cc026e9f1d316d31d69b56a61efe9dcfcc54dcd8f478c61c9"
+    },
+    {
+      "path": "openrec/modeling/decoders/srn_decoder.py",
+      "sha256": "2675590de83913f9a467040a3d3eeb33103345afee579fb6cefa87939c6e1a1f"
+    },
+    {
+      "path": "openrec/modeling/decoders/visionlan_decoder.py",
+      "sha256": "c0d1d3a40772df535e5a87c0fb3faf5cd627747d1414e5ac3ff423ebef78ae4c"
+    },
+    {
+      "path": "openrec/modeling/decoders/vl4str_decoder.py",
+      "sha256": "b7ae239dda46270a9e5f5a1df23ba503c37c5c9fdbb01623f41ee23dd0bb5e39"
+    },
+    {
+      "path": "openrec/modeling/encoders/__init__.py",
+      "sha256": "e4f32265ac5854c8dda7c6bf014a765fde644b4f0bc7fccb9b6e2fda7f0f2ddb"
+    },
+    {
+      "path": "openrec/modeling/encoders/autostr_encoder.py",
+      "sha256": "40db2d2a9c05b6fec5627a0b25a7ad830bdfa3665062ca5c720162048db3036b"
+    },
+    {
+      "path": "openrec/modeling/encoders/cam_encoder.py",
+      "sha256": "142c9cf426564b007fb6ff9ed2d013033599f04a183d7ad0bf96a6671e754b0d"
+    },
+    {
+      "path": "openrec/modeling/encoders/convnextv2.py",
+      "sha256": "a1797b8bb8e9cd4fb1a733ac18c668213751827309eee1fd3d3ac115bf2c570f"
+    },
+    {
+      "path": "openrec/modeling/encoders/focalsvtr.py",
+      "sha256": "1f988c4ed59a82e689170c5c8feb07d556715242dbb0aa87613ddf4a5108b289"
+    },
+    {
+      "path": "openrec/modeling/encoders/nrtr_encoder.py",
+      "sha256": "3ac8487bd55db0b031b9c5b50e1ef02b3215f68ebd68cc4d6401a69b9a531d77"
+    },
+    {
+      "path": "openrec/modeling/encoders/rec_hgnet.py",
+      "sha256": "3a739025846c081396bddfee34695e84993b0f7abfa6906e6f91de5a9eae52bd"
+    },
+    {
+      "path": "openrec/modeling/encoders/rec_lcnetv3.py",
+      "sha256": "447dd22744efdf26b87a8fce6d7ffe837730219188745afcf39bcbe0f8ceacfd"
+    },
+    {
+      "path": "openrec/modeling/encoders/rec_mv1_enhance.py",
+      "sha256": "8a13ecd78a06a6ddc484d33a79ea6ac083484cd8406935ec5467b2a49756f30a"
+    },
+    {
+      "path": "openrec/modeling/encoders/rec_nrtr_mtb.py",
+      "sha256": "4c3b54537f817aed018251f9216ef5c8cf042e90dd20a039fc2e6a372df8295f"
+    },
+    {
+      "path": "openrec/modeling/encoders/rec_resnet_31.py",
+      "sha256": "112edd2dd12582c277c516af3ef64a26df948debdeea16030df0f41836953f67"
+    },
+    {
+      "path": "openrec/modeling/encoders/rec_resnet_45.py",
+      "sha256": "3f35044249cc61f971234e00c97d0615882a697e78b8336650250565c206a9e0"
+    },
+    {
+      "path": "openrec/modeling/encoders/rec_resnet_fpn.py",
+      "sha256": "25c22e9a014d9f78602217c12eb6971d81b19d6da1da92e2fde5f700ea27191b"
+    },
+    {
+      "path": "openrec/modeling/encoders/rec_resnet_vd.py",
+      "sha256": "378b83e64f175a696c87f181f2cdd5fcb7c2f2116b8972dd2daa65bae71cd8bb"
+    },
+    {
+      "path": "openrec/modeling/encoders/repvit.py",
+      "sha256": "356f16de28a7ba627a0ef187f738230ab97ff327e0824808d7b1f2e57315e27f"
+    },
+    {
+      "path": "openrec/modeling/encoders/resnet31_rnn.py",
+      "sha256": "291085333994f6dbd6b8df9623e512c9d0deffe33cf455edee5a26f9461e0c28"
+    },
+    {
+      "path": "openrec/modeling/encoders/svtrnet.py",
+      "sha256": "d9cb6e5f32d486e020210ba9225964883363707d05c03dd2fd9dfb47de61050b"
+    },
+    {
+      "path": "openrec/modeling/encoders/svtrnet2dpos.py",
+      "sha256": "29a5c2543a8f506e45e6d3b5a0e4be70b7957f4f0173ed8396f9ae6c598facdc"
+    },
+    {
+      "path": "openrec/modeling/encoders/svtrv2.py",
+      "sha256": "8be2f50a30bf6143f891addb97bc16c2023858226b0810d902c2ef2124c5cc6d"
+    },
+    {
+      "path": "openrec/modeling/encoders/svtrv2_lnconv.py",
+      "sha256": "2695d6cc73718deb46b197a87e5ebd7a09f3ce8d97b82ad65c3e49ebce4aa373"
+    },
+    {
+      "path": "openrec/modeling/encoders/svtrv2_lnconv_two33.py",
+      "sha256": "80bf545e79fe07e9f7fb6a3803e330e9520e0dc87b87d88253b5b39f7bdb5605"
+    },
+    {
+      "path": "openrec/modeling/encoders/vit.py",
+      "sha256": "b9a518bea4963f19e2587111139177e6d9071595239a5ae6df8eeebb9be55c44"
+    },
+    {
+      "path": "openrec/modeling/transforms/__init__.py",
+      "sha256": "e44178b6b4c3aa60528ca8cb3dba2dcc8363d40b8a5df5d968bb809e25449fdc"
+    },
+    {
+      "path": "openrec/modeling/transforms/aster_tps.py",
+      "sha256": "ffc93e75df4be0d60542fd8ae7749f52a36d5c87a43a3956430bba9e9cacd460"
+    },
+    {
+      "path": "openrec/modeling/transforms/moran.py",
+      "sha256": "e8a85b09c4383d1e0d19f309d158c71858da49d9134b3b01fac153b24d7bcdb0"
+    },
+    {
+      "path": "openrec/modeling/transforms/tps.py",
+      "sha256": "3faf7b4b18ac74908179c88c4f2d67b0412691747a4b2322fa230a78360f5ee4"
+    },
+    {
+      "path": "openrec/modeling/unirec_modeling/configuration_unirec.py",
+      "sha256": "b2a7f98aa448f58d484405f792431ec5da4cab949fdfd428a96809216b45fd96"
+    },
+    {
+      "path": "openrec/modeling/unirec_modeling/modeling_unirec.py",
+      "sha256": "061112ef28c23f7c1946a810bcc166e8ff504375f496bf6142a079ba218b29f6"
+    },
+    {
+      "path": "openrec/postprocess/__init__.py",
+      "sha256": "312ed64110bbf11d32167eb5a604998840815148bf670aa72337eca8c94e83b4"
+    },
+    {
+      "path": "openrec/postprocess/abinet_postprocess.py",
+      "sha256": "e9d04e23482add591595c193693f3c57da684eba2422cc267b76126672e72143"
+    },
+    {
+      "path": "openrec/postprocess/ar_postprocess.py",
+      "sha256": "33a45338c2ec23bc861e8026fa16468b58e552d99fea5523848375d79343fdaa"
+    },
+    {
+      "path": "openrec/postprocess/ce_postprocess.py",
+      "sha256": "0831183b0f23432fdaafcaf5d133e262ea180ce5505abb4cd5ec9f8d4f5e40a3"
+    },
+    {
+      "path": "openrec/postprocess/char_postprocess.py",
+      "sha256": "18bb3fa8658939e9ce7420c50d340f3f961d724d7bd429206a7fe79ea1dc1932"
+    },
+    {
+      "path": "openrec/postprocess/cmer_postprocess.py",
+      "sha256": "d591e739bd919ec948c000cc361959c9d31abdb8997d1d71c091b7eec9e61589"
+    },
+    {
+      "path": "openrec/postprocess/cppd_postprocess.py",
+      "sha256": "83f85d73781577bcb8c2dac1c4677b0fa84944f5b847da4cba0b1ab5ec84ebd8"
+    },
+    {
+      "path": "openrec/postprocess/ctc_postprocess.py",
+      "sha256": "766a7cba129580ede5528800a35364154ed4f6082aa8ba4c90628da83c70f64b"
+    },
+    {
+      "path": "openrec/postprocess/igtr_postprocess.py",
+      "sha256": "7a85922918d0be9c75e53aca78048834ee3f6d0171165f4c5645df76aba13fcb"
+    },
+    {
+      "path": "openrec/postprocess/lister_postprocess.py",
+      "sha256": "8472eda0109c9b670f595792049d41785963a529ba0cfd57b59a3455c7179e03"
+    },
+    {
+      "path": "openrec/postprocess/mgp_postprocess.py",
+      "sha256": "fbea33fd3a08158260facf1ce462f0086cf66b59f0a18b23335a03ddbe538467"
+    },
+    {
+      "path": "openrec/postprocess/nrtr_postprocess.py",
+      "sha256": "7b817a8ecbdf1c4ee4ee131ba39c1ed4593993a9dc48ab3f8158b21a57fb7100"
+    },
+    {
+      "path": "openrec/postprocess/smtr_postprocess.py",
+      "sha256": "3ce9c56480ab76ce2c6840d008461c02d07ab9701fc4bfad146029455a4ac60e"
+    },
+    {
+      "path": "openrec/postprocess/srn_postprocess.py",
+      "sha256": "6b1a8299533317d0077466877eaf3c90faf79a9a5a0f882a373a075383d10c6d"
+    },
+    {
+      "path": "openrec/postprocess/unirec_postprocess.py",
+      "sha256": "5a7cc0d5f1d8e6b1f6b6372d5afc540ca6f445ad5552b933d36153f6583831da"
+    },
+    {
+      "path": "openrec/postprocess/visionlan_postprocess.py",
+      "sha256": "1677619da33bcecf97a382db143c5aaf5ecd4ab12b18eb6274cfc1a7dd0d1c74"
+    },
+    {
+      "path": "pytest.ini",
+      "sha256": "07e12af78809b103a9e003b9bf24f9718928fa263046b37bf3ebc9ebbf802ceb"
+    },
+    {
+      "path": "requirements.txt",
+      "sha256": "4c93e15149ac656e3bb9e250f3bc61ead3bcd784489a18e9d66e23f6136c7509"
+    },
+    {
+      "path": "strtrain/__init__.py",
+      "sha256": "4d3ff88cdf40f789d9f63f4d28a59ab547490316acfd997facafbbf20e69d142"
+    },
+    {
+      "path": "strtrain/engine/__init__.py",
+      "sha256": "22eef9fb0f7f9e53e69c1fea280ee761a69a1dfef1b53ac398af0de2fd96577e"
+    },
+    {
+      "path": "strtrain/engine/config.py",
+      "sha256": "7a76b8a82ba5a03a70fd4359c1ad03916324765d29dc9b99731ae0d70df0fc46"
+    },
+    {
+      "path": "strtrain/utils/EN_symbol_dict.txt",
+      "sha256": "f78699bea31752580f18344fd2c276171d1fd8268094b655452f703fe941e6e0"
+    },
+    {
+      "path": "tests/test_rescore_core.py",
+      "sha256": "fb95feccb2d8cdedceaa071ccb928698dc7c8ab3d548acfde04a3a82abbe5cde"
+    },
+    {
+      "path": "tools/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tools/_io.py",
+      "sha256": "f85cc3a28bf2e4f758ec563db768e32f3c6d53ebced2450083999bc2dd7a0e8a"
+    },
+    {
+      "path": "tools/experiments/__init__.py",
+      "sha256": "8a76792e0728449dd3c10c3634845d1c87ccde72d4cc232b80c174531704c4e2"
+    },
+    {
+      "path": "tools/experiments/rescore/__init__.py",
+      "sha256": "7be19ec9fd04ca8383ed165aefd814a0fc055f8a087feb67c304bdbe36e0bb27"
+    },
+    {
+      "path": "tools/experiments/rescore/common.py",
+      "sha256": "db8c8fab5239daa5640ea5f467bb5212364c06403fbd722353c70242e7faef75"
+    },
+    {
+      "path": "tools/experiments/rescore/condition_table.py",
+      "sha256": "687cd6f179cd7b23c7d4433bc202f2acbb79195c06d90169913eea0565e2340d"
+    },
+    {
+      "path": "tools/experiments/rescore/main_table.py",
+      "sha256": "2ad441e2dce9e74c8622108c7267072c03d36668462be01aae08b61aa2202dcb"
+    },
+    {
+      "path": "tools/experiments/rescore/recorded.py",
+      "sha256": "4c71548b466632510a814ba894ee74f035f08c39333c635b452a00dcc5ace2d2"
+    },
+    {
+      "path": "tools/experiments/rescore/reproduce.py",
+      "sha256": "b806ac7de4a8ca46a1544962b0a81448967aedd610ecf46a7f30a09a08d5440b"
+    },
+    {
+      "path": "tools/rescore/__init__.py",
+      "sha256": "092e12c8a8670cdd2b48044df805ce73e673924d741b73c5192b21efb1592c4e"
+    },
+    {
+      "path": "tools/rescore/ablation.py",
+      "sha256": "ee3a2e31a2ded30e625120977ee52ddcd23d54bfd7e25e6a8c9c6edc3919eb10"
+    },
+    {
+      "path": "tools/rescore/cli.py",
+      "sha256": "7281cf80c2904177e8ffafda997f9545eb1961da729ce85f4287527f90cbd719"
+    },
+    {
+      "path": "tools/rescore/compact_watershed.LICENSE",
+      "sha256": "22675642d1f555f0e5a07ea108a84b4b8fe31ba5cbda1802f16cba82836d9b41"
+    },
+    {
+      "path": "tools/rescore/compact_watershed.cpp",
+      "sha256": "7a860258335c6003836939f28fa6176b27cf44dea6690224079e2c24c254158a"
+    },
+    {
+      "path": "tools/rescore/condition.py",
+      "sha256": "1f91ccfe3966df74e2d7782f83a0b9f2f6008c4bc678766bbfae86217839be8b"
+    },
+    {
+      "path": "tools/rescore/curve_spacing.cpp",
+      "sha256": "6bdf503788d4f50919b38dda2e49250376776bb6dbddaa814b819fa3c2f6a689"
+    },
+    {
+      "path": "tools/rescore/data/font_metrics.json",
+      "sha256": "c3526ef8c00010227b214744a90ab0c0a1c19bfb0571ce63feac8b6e67ef8a43"
+    },
+    {
+      "path": "tools/rescore/data/glyph_offset.json",
+      "sha256": "4d42cd31cdd6515f59ff04283b72477ebe96ddb1d279aada0c8ff5969c1c476f"
+    },
+    {
+      "path": "tools/rescore/data/svtrv2-ar.yml",
+      "sha256": "a87369319e7cd8c1e4ded474dfd68a6de7fdb4678528690beea1ea8e9c3df007"
+    },
+    {
+      "path": "tools/rescore/decide.py",
+      "sha256": "f5fbf45f5401ef6b94e6998cfcd15d7d1d0886aa8aafc9a6ff74213032e8ac0e"
+    },
+    {
+      "path": "tools/rescore/hypotheses.py",
+      "sha256": "35f2c10f3bccc9ba245b6612e548f86f202bb3e78bd8f4df225014890e0ab03f"
+    },
+    {
+      "path": "tools/rescore/lm.py",
+      "sha256": "88288bf74c8483a6cc733d8776c5e71e70cfcb180685a521cc4f92f0143a0325"
+    },
+    {
+      "path": "tools/rescore/metrics.py",
+      "sha256": "e8871b4000d9edc9a760bb3fd1b62941f3277e55fd393093f6c819d8bd8714f6"
+    },
+    {
+      "path": "tools/rescore/midpoint.py",
+      "sha256": "743247dbaec84d99a2f46a44840ca25d4473f5dff5acceaf527a6f92a0404c8e"
+    },
+    {
+      "path": "tools/rescore/nbest.py",
+      "sha256": "14167a7a3cb0cc4b67114cc831f193cd7b5a88b6bab7d3fde19979c237f8f50a"
+    },
+    {
+      "path": "tools/rescore/pipeline.py",
+      "sha256": "d743e6550acb451259ab5762283f2c0e519d325d87b5c1887fbc18eb925f1a65"
+    },
+    {
+      "path": "tools/rescore/position.py",
+      "sha256": "4c57c6cae9a47a0660964bbb7baa950bb5afd148b692d37467e613890fbe3dfa"
+    },
+    {
+      "path": "tools/rescore/region.py",
+      "sha256": "d720b32f5ebb6e17940cb55764054743ea3b4de065e5a739da7d2c1dde840598"
+    },
+    {
+      "path": "tools/rescore/segment.py",
+      "sha256": "e8457a71055be20cf4a17d0bc4eed91a093c8caa32f2bb1696d6a0531e77365b"
+    },
+    {
+      "path": "tools/rescore/select.py",
+      "sha256": "9450df2887a9a811f16bf538ed921c0d2cbb50c2e7e4f4a175e34867bfa639c5"
+    },
+    {
+      "path": "tools/rescore/store.py",
+      "sha256": "6e432d4eaf0616f9badccfd268df171621bf806f6c55b70f8af45c16d253cc47"
+    },
+    {
+      "path": "tools/rescore/window.py",
+      "sha256": "ae2bde8304f7bcd4775f84165f766266f9f798511185084367a1c69f89529857"
+    },
+    {
+      "path": "tools/rescore/window_score.py",
+      "sha256": "6cecc3e82baa940c8372984164a63630307d8fe4ccd1aff72ff1fdaac0402568"
+    }
+  ],
+  "excluded": [
+    "reports",
+    "tools/reports",
+    "tools/anno (probe, reports, annotation runtime)",
+    "tools/experiments (other than rescore)",
+    "tools/mllm",
+    "materials",
+    "logs",
+    "weights",
+    "tools/rescore/context_pruning.py",
+    "tools/rescore/ilm.py",
+    "openrec/modeling/legit/",
+    "tools/experiments/rescore/analysis.py",
+    "tools/experiments/rescore/byt5_segment_type.py",
+    "tools/experiments/rescore/candidate_lambda.py",
+    "tools/experiments/rescore/coverage.py",
+    "tools/experiments/rescore/fig_decisions.py",
+    "tools/experiments/rescore/figure_windows.py",
+    "tools/experiments/rescore/fix_error_types.py",
+    "tools/experiments/rescore/gap_wrong_keys.py",
+    "tools/experiments/rescore/ilm_fixed.py",
+    "tools/experiments/rescore/ilm_rows.py",
+    "tools/experiments/rescore/independent_baselines.py",
+    "tools/experiments/rescore/length_and_sensitivity.py",
+    "tools/experiments/rescore/macro_bootstrap.py",
+    "tools/experiments/rescore/new_benchmarks.py",
+    "tools/experiments/rescore/other_recognizers.py",
+    "tools/experiments/rescore/other_recognizers_ilme.py",
+    "tools/experiments/rescore/recognizer_table.py",
+    "tools/experiments/rescore/refiners.py",
+    "tools/experiments/rescore/refiners_iterative.py",
+    "tools/experiments/rescore/selection_gap.py",
+    "tools/experiments/rescore/selection_rules.py",
+    "tools/experiments/rescore/shallow_fusion.py",
+    "tools/experiments/rescore/span_reread.py",
+    "tools/experiments/rescore/std_vs_attention.py",
+    "tools/experiments/rescore/strip_windows.py",
+    "tools/experiments/rescore/whole_image_tta.py",
+    "tools/experiments/rescore/window_factors.py",
+    "tools/experiments/rescore/window_independence.py",
+    "tools/experiments/rescore/window_independence_factors.py",
+    "tools/experiments/rescore/window_ordering.py",
+    "tools/experiments/rescore/window_runs.py",
+    "tools/experiments/rescore/window_tokens.py"
+  ],
+  "scope": "Window re-reading of beam hypotheses (tools/rescore) and the reproduction of Tables 2, 3 and 7."
+}
