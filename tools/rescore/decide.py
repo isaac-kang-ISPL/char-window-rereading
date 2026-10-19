@@ -1,13 +1,14 @@
 """The decision rule — S(y) over the candidates of each image, change a to the best y when max S > τ.
 
-    S(y) = Δrec(y) + α·ΔPLL(y) + β·Δlen(y) + γ·ΔW(y)            (`Batch.decide`)
-    S(y) = Δrec(y) − δ·ΔILM(y) + α·ΔPLL(y) + β·Δlen(y)          (`Batch.decide_ilm`, internal LM subtracted)
+    S(y) = Δb(y) + α·ΔV(y) + β·Δlen(y) + γ·ΔPLL(y)              (`Batch.decide`, the rule of the paper)
+    S(y) = Δb(y) − δ·ΔILM(y) + γ·ΔPLL(y) + β·Δlen(y)            (`Batch.decide_ilm`, comparison rows, not the method)
 
-In code the coefficients are named after the stored results: mu = α (ByT5), beta = β (length), omega = γ (window),
-tau = τ, lam = δ (ILM). A term with coefficient 0 is left out of the sum. A candidate without a value for a term
-whose coefficient is not 0 is not chosen; an image whose a has no ByT5 value is not changed when α > 0. Ties go to
-the first candidate in beam order. Scores are summed term by term in the order above with IEEE doubles, so the
-arrays here give the same decisions as a loop over the candidates.
+Δb is the recognizer's log P (`dlp`), ΔV the window score (`dw`; the window tables call it W). In code the
+coefficients are named after the stored results: omega = α (window), beta = β (length), mu = γ (ByT5), tau = τ,
+lam = δ (ILM). A term with coefficient 0 is left out of the sum. A candidate without a value for a term whose
+coefficient is not 0 is not chosen. Ties go to the first candidate in beam order. Scores are summed term by term in
+the order of `Batch.decide` (log P, ByT5, length, window) with IEEE doubles, so the arrays here give the same
+decisions as a loop over the candidates.
 
 Context term: ΔPLL(y) = 0 when a or y has fewer than two characters (`CONTEXT_MIN`) — a one-character string has no
 visible context once its character is masked, so its ByT5 value is close to a character frequency. Such a candidate
@@ -75,7 +76,7 @@ def window_delta(V, items):
 
 
 def with_window(items, Wd):
-    """Items with ΔW from {key: {y: ΔW}} — a candidate without a value gets None (not chosen when γ > 0)."""
+    """Items with ΔV from {key: {y: ΔV}} — a candidate without a value gets None (not chosen when α > 0)."""
     out = []
     for k, b, g, cands in items:
         w = (Wd or {}).get(k, {})
@@ -257,7 +258,8 @@ class Batch:
         return d
 
     def decide(self, lm, mu, beta, tau, omega=0., context_min=None):
-        """S = Δrec + (α·ΔPLL if α) + β·Δlen + (γ·ΔW if γ) — ΔPLL with the short-string rule (`CONTEXT_MIN`)."""
+        """S = Δb + (γ·ΔPLL if γ) + β·Δlen + (α·ΔV if α) — mu = γ, omega = α; ΔPLL with the short-string rule
+        (`CONTEXT_MIN`)."""
         c = self.core
         valid = None
         if mu:
@@ -272,7 +274,8 @@ class Batch:
         return self._pick(s, valid, tau)
 
     def decide_ilm(self, lm, ilm, lam, mu, beta, tau, context_min=None):
-        """S = Δrec − δ·ΔILM + (α·ΔPLL if α) + β·Δlen (no window term). δ = 0 is `decide` without the window."""
+        """S = Δb − δ·ΔILM + (γ·ΔPLL if γ) + β·Δlen (no window term; comparison rows). δ = 0 is `decide` without the
+        window."""
         if not lam:
             return self.decide(lm, mu, beta, tau, context_min=context_min)
         c = self.core

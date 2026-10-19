@@ -1,9 +1,10 @@
 """Rows of the main table — the final coefficients fixed, terms dropped.
 
 Only the final combination (ByT5 + window) is chosen on the validation set (`select.final_params`). Every other row
-keeps those coefficients and sets the dropped terms to 0; 'Beam' is the beam top 1 (β = τ = 0). The ILM rows choose
-only δ on the validation set, with α, β, τ of the final combination. Row and pair names are the keys of the stored
-results. clusters=True adds the reading-cluster rows of earlier results ('무리 + …', final combination with clusters).
+keeps those coefficients and sets the dropped terms to 0; 'Beam' is the beam top 1 (β = τ = 0). The ILM rows
+(comparison rows, not the method) choose only δ on the validation set, with γ, β, τ of the final combination. Row and
+pair names are the keys of the stored results ('W 창' = window term, '무리' = reading clusters). clusters=True adds
+the reading-cluster rows of earlier results (final combination with clusters).
 """
 from __future__ import annotations
 
@@ -22,7 +23,7 @@ RULE = '최종 계수 고정 · 뺀 항만 0 · Beam 은 빔 1위(β 0 · τ 0) 
 
 def ablation(full, Wt, lm, F, dev=None, ilm=None, clusters=False):
     """→ (res, pred). res = dict(params, rule, rows{name: params · cb · ub · correct}, pairs); pred = {name: outputs}.
-    Wt = {key: {y: ΔW}} against a; with ilm ({string: log P}) and dev, the − ILM rows; clusters=True, the cluster rows."""
+    Wt = {key: {y: ΔV}} against a; with ilm ({string: log P}) and dev, the − ILM rows; clusters=True, the cluster rows."""
     B = batch(full)
     T = B.with_window(Wt)
     mu, om, beta, tau = F['mu'], F['omega'], F['beta'], F['tau']

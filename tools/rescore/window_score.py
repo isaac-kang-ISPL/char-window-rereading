@@ -1,26 +1,32 @@
-"""창 점수 W(y) — 가설 y 를 그 장의 글자 창마다 같은 인식기(svtrv2-ar)로 다시 읽어 모은 값.
+"""Window term V(y) (code: W) — re-read hypothesis y with the same recognizer (svtrv2-ar) over every character window of the
+image and aggregate.
 
-창 w(자리 범위 lo..hi · `window.prepare` 의 slot_ids)에 대해 y 를 a 위로 편집 정렬해 그 범위에 대응하는 y 의 부분 문자열 c_w(y) 를 잡고,
-창 그림을 입력으로 c_w(y) + ⟨eos⟩ 를 교사 강제한 로그우도를 창 점수 s_w(y) 로 한다. 기본은 겹침 가중 합이다:
+For window w (character position range lo..hi · the slot_ids of `window.prepare`), edit-align y onto a, take the substring
+c_w(y) of y that corresponds to that range, and use as window score s_w(y) the log-likelihood of teacher forcing
+c_w(y) + ⟨eos⟩ with the window image as input. The default is the overlap-weighted sum:
 
-    s_w(y) = log P_AR(c_w(y) ⟨eos⟩ | 창 w)          W(y) = Σ_w u_w s_w(y)          u_w = mean_{i ∈ slot_ids(w)} 1 / n_i
+    s_w(y) = log P_AR(c_w(y) ⟨eos⟩ | window w)          V(y) = Σ_w ω_w s_w(y)          ω_w = mean_{i ∈ slot_ids(w)} 1 / n_i
 
-n_i = 자리 i 를 덮는 유효 창 수(한 장의 모든 가설에 같은 무게). 원고 v1(`SCORE_PAPER_V1`)은 핵심 ± 경계 한 글자씩(변형 최대 넷)의
-logsumexp 를 창 점수로 하고 무게 없이 더한다: s_w(y) = logsumexp_{v ∈ variants_w(y)} log P_AR(v ⟨eos⟩ | 창 w) · W(y) = Σ_w s_w(y).
+n_i = number of valid windows covering character position i (the same weight for all hypotheses of an image). The earlier window definition
+(`SCORE_PAPER_V1`, not used in the paper) uses as window score the logsumexp over the core ± one boundary character on each side (up to four
+variants) and sums without weights:
+s_w(y) = logsumexp_{v ∈ variants_w(y)} log P_AR(v ⟨eos⟩ | window w) · V(y) = Σ_w s_w(y).
 
-결과는 장마다 {가설: W} — greedy a 도 넣는다(Δ 는 결정 쪽이 만든다). 규칙:
-빈 문자열 · 사전 밖 글자가 든 가설은 뺀다 · 유효한 창이 하나도 없는 장은 모든 가설 0.0 · 어떤 창에서 부분 문자열을 못 재면 그 창 항 −1e30
-(겹침 가중은 잰 항을 창 순서로 더한 뒤 −1e30 × 못 잰 창 수 · 원고 v1 합은 창 순서대로 −1e30 을 끼워 더한다 — 저장 점수와 같음) ·
-창을 못 만든 장(`window.prepare` 가 skip)은 결과에 열쇠가 없다.
-인식기의 float32 행렬곱은 기본이 TF32(Ampere 이상 · `nbest.precision`)다. 원고 저장 점수는 fp32 —
-`tf32=False` · `--fp32` · LEGIT_AR_TF32=0(`PAPER_V1_RUN` 은 fp32 를 포함한다).
+The result is {hypothesis: V(y)} per image — greedy a is included too (Δ is formed by the decision side). Rules:
+hypotheses with an empty string · out-of-vocabulary characters are dropped · an image with no valid window gives 0.0 for
+all hypotheses · when a substring cannot be measured in a window, that window term is −1e30
+(overlap weights add the measured terms in window order, then −1e30 × the number of unmeasured windows · the sum of the earlier window definition
+adds −1e30 in place, in window order — as in the stored scores) ·
+an image whose windows cannot be built (`window.prepare` skips it) has no key in the result.
+The recognizer's float32 matmuls default to TF32 (Ampere or newer · `nbest.precision`). The paper's stored scores are
+fp32 — `tf32=False` · `--fp32` · LEGIT_AR_TF32=0 (`PAPER_V1_RUN` includes fp32).
 
-`SCORE_PAPER_V1` gives the stored v1 scores bit for bit on the same machine and batches as the research code that
+`SCORE_PAPER_V1` gives the stored scores of the earlier window definition bit for bit on the same machine and batches as the research code that
 produced them; the comparison lives in the research repository.
 
     PYTHONPATH=. python -m tools.rescore.window_score --pool <TSV(dataset, sample_idx)> --hyps <JSON {key: [y, …]}> --out <dir> \
         --device cuda:0 [--checkpoint <UnionST-U14MFilter.pth>]
-    # v1 definition: … --paper-v1
+    # earlier window definition (not used in the paper): … --paper-v1
 """
 from __future__ import annotations
 
@@ -36,19 +42,20 @@ import numpy as np
 
 REPO = Path(__file__).resolve().parents[2]
 CONFIG = Path(__file__).resolve().with_name('data') / 'svtrv2-ar.yml'   # inference configuration of the recognizer
-MAX_LEN = 25            # 교사 강제할 부분 문자열의 최대 길이(인식기 출력 길이 상한)
-CHUNK = 5000            # 저장 묶음 — 셋마다 정렬한 장 번호를 5,000장씩
-WINDOW_BATCH = 256      # 인코더에 한 번에 넣는 창 수(같은 입력 크기끼리)
-CANDIDATE_BATCH = 2048  # 디코더에 한 번에 넣는 (창, 부분 문자열) 수
+MAX_LEN = 25            # maximum length of a teacher-forced substring (recognizer output length limit)
+CHUNK = 5000            # storage chunk — the sorted image indices of each dataset, 5,000 images each
+WINDOW_BATCH = 256      # windows fed to the encoder at once (same input size only)
+CANDIDATE_BATCH = 2048  # (window, substring) pairs fed to the decoder at once
 AGGREGATIONS = ('coverage', 'sum')
-SCORE_DEFINITION = dict(boundary=False, aggregation='coverage')   # 기본 — 핵심 부분 문자열 하나 · 겹침 가중
-SCORE_PAPER_V1 = dict(boundary=True, aggregation='sum')           # 원고 v1 — 경계 변형 logsumexp · 합
+SCORE_DEFINITION = dict(boundary=False, aggregation='coverage')   # default — one core substring · overlap weights
+SCORE_PAPER_V1 = dict(boundary=True, aggregation='sum')           # earlier window definition — logsumexp of boundary variants · sum
 
 
-# ---------------------------------------------------------------- 가설 ↔ 창 대응
+# ---------------------------------------------------------------- hypothesis ↔ window correspondence
 
 def edit_ops(a, g):
-    """a → g 편집 정렬(레벤슈타인 DP · 뒤에서 되짚기 · 같음/바꿈 > a 에만 > g 에만 순) → [(op, i, j)] · op '=' · 'S' · 'I'(a 에만) · 'D'(g 에만)."""
+    """Edit alignment a → g (Levenshtein DP · backtracking from the end · order equal/substitute > a only > g only)
+    → [(op, i, j)] · op '=' · 'S' · 'I' (a only) · 'D' (g only)."""
     n, m = len(a), len(g); D = np.zeros((n + 1, m + 1), int); D[:, 0] = range(n + 1); D[0, :] = range(m + 1)
     for i in range(1, n + 1):
         for j in range(1, m + 1):
@@ -65,7 +72,8 @@ def edit_ops(a, g):
 
 
 def coords(a, y):
-    """y 의 글자마다 a 위 좌표 — 같음 · 바꿈은 그 자리 i, y 에만 있는 글자는 바로 앞 대응 자리 + 0.5."""
+    """Coordinate on a for each character of y — equal · substitute get that position i; a character only in y gets the
+    previous matched position + 0.5."""
     out = []; last = -1
     for op, i, j in edit_ops(a, y):
         if op in ('=', 'S'):
@@ -76,8 +84,10 @@ def coords(a, y):
 
 
 def variants(lo, hi, L, units):
-    """창이 덮는 a 의 자리 lo..hi 에 대응하는 y 의 부분 문자열 — 핵심 ± 경계 한 글자씩(최대 넷).
-    첫 창은 y 앞에 붙은 글자를, 끝 창은 뒤에 붙은 글자를 핵심에 넣는다. 핵심이 비면(y 가 그 자리를 모두 뺐다) 경계 글자만."""
+    """Substrings of y corresponding to the positions lo..hi of a covered by the window — the core ± one boundary
+    character on each side (up to four).
+    The first window adds to the core the characters prepended to y, the last window those appended to y. If the core is
+    empty (y dropped all those positions), only the boundary characters."""
     core = [k for k, (c, _) in enumerate(units) if lo <= c <= hi or (c < 0 and lo == 0) or (c > L - 1 and hi == L - 1)]
     if core:
         k0, k1 = core[0], core[-1]
@@ -90,7 +100,7 @@ def variants(lo, hi, L, units):
     return [l + mid + r for l in ([''] + ([left] if left else [])) for r in ([''] + ([right] if right else []))]
 
 
-# ---------------------------------------------------------------- 교사 강제 로그우도
+# ---------------------------------------------------------------- teacher-forcing log-likelihood
 
 def encode_text(text, char_index, max_len):
     if len(text) > max_len or any(char not in char_index for char in text):
@@ -99,8 +109,10 @@ def encode_text(text, char_index, max_len):
 
 
 def forced_scores(decoder, memory, requests, char_index, candidate_batch, max_len):
-    """[(창 번호, 문자열)] → {(창 번호, 문자열): (log P(문자열 ⟨eos⟩ | 창), 토큰당 평균)} — ⟨bos⟩ 뒤 문자열 + ⟨eos⟩ 를 한 번에 교사 강제.
-    비슷한 길이끼리 묶어 패딩을 줄인다. 사전 밖 글자 · max_len 보다 긴 문자열은 결과에 없다."""
+    """[(window index, string)] → {(window index, string): (log P(string ⟨eos⟩ | window), mean per token)} —
+    teacher-forces string + ⟨eos⟩ after ⟨bos⟩ in one pass.
+    Strings of similar length are batched together to reduce padding. Strings with out-of-vocabulary characters · longer
+    than max_len are absent from the result."""
     import torch
     encoded = []
     for image_index, text in requests:
@@ -169,7 +181,8 @@ def reader_config():
 
 
 def load_reader(device, checkpoint=None):
-    """svtrv2-ar(공개 가중치 UnionST-U14MFilter) → (모델, 사전 {글자: 번호}) — 디코더 출력의 마지막 둘(특수 토큰)은 사전에서 뺀다."""
+    """svtrv2-ar (public weights UnionST-U14MFilter) → (model, vocabulary {character: index}) — the last two decoder
+    outputs (special tokens) are excluded from the vocabulary."""
     import torch
     from openrec.modeling import build_model
     from openrec.postprocess import build_post_process
@@ -185,7 +198,8 @@ def load_reader(device, checkpoint=None):
 
 
 def coverage_weights(slots, length):
-    """u_w = mean_{i ∈ slots_w} 1 / (자리 i 를 덮는 유효 창 수) — 창마다 무게 하나(가설과 무관)."""
+    """ω_w (code: u) = mean_{i ∈ slots_w} 1 / (number of valid windows covering position i) — one weight per window (independent
+    of the hypothesis)."""
     count = np.zeros(length, dtype=np.int64)
     for ids in slots:
         count[ids] += 1
@@ -193,9 +207,12 @@ def coverage_weights(slots, length):
 
 
 def aggregate(raw, aggregation='coverage'):
-    """창별 원점수 → {key: {y: W(y)}} — `score_windows` 가 쓰는 바로 그 집계(GPU 회차와 CPU 재집계가 바이트 같다).
-    raw: `score_windows(detail=True)` 의 둘째 값, 또는 `run` 이 쓴 <묶음>.raw.pkl.gz 를 읽은 객체(dict(definition, rows)).
-    'sum'(원고 v1): 창 순서대로 더하며 못 잰 창은 −1e30 을 끼워 더한다 · 'coverage': 잰 항 u_w · s_w 를 창 순서로 더한 뒤 −1e30 × 못 잰 창 수."""
+    """Per-window raw scores → {key: {y: V(y)}} — exactly the aggregation `score_windows` uses (GPU runs and CPU
+    re-aggregation are byte-identical).
+    raw: the second value of `score_windows(detail=True)`, or the object read from a <chunk>.raw.pkl.gz written by `run`
+    (dict(definition, rows)).
+    'sum' (earlier window definition): add in window order, inserting −1e30 for unmeasured windows · 'coverage': add the measured terms
+    ω_w · s_w in window order, then −1e30 × the number of unmeasured windows."""
     if aggregation not in AGGREGATIONS:
         raise ValueError(f'aggregation must be one of {AGGREGATIONS}')
     rows = raw['rows'] if 'rows' in raw and 'definition' in raw else raw
@@ -219,16 +236,20 @@ def aggregate(raw, aggregation='coverage'):
 
 
 def hypotheses_of(text, hyps_y, char_index):
-    """채점할 가설 — a 를 맨 앞에, 중복 · 빈 문자열 · 사전 밖 글자가 든 가설을 뺀다."""
+    """Hypotheses to score — a first; duplicates · empty strings · hypotheses with out-of-vocabulary characters are
+    dropped."""
     return [y for y in dict.fromkeys([text] + list(hyps_y)) if y and all(c in char_index for c in y)]
 
 
 def plan_record(record, hyps_y, char_index, boundary=False):
-    """한 장의 채점 계획 — GPU 앞의 Python 계산(편집 정렬 · coords · 부분 문자열 · 창 무게)을 장마다 끝낸 것.
-    `run` 은 CPU 일꾼(`_prepare`)에서 미리 만들어 기록의 'plan' 에 붙이고, `score_windows` 는 붙은 계획이 지금 인자와 맞으면
-    그대로 쓰고 없거나 안 맞으면 그 자리에서 이 함수로 만든다 — 어느 쪽이든 같은 값이다.
-    → dict(text, ys, boundary, n_windows, local=[유효 창의 r['windows'] 번호], meta=[dict(slot_ids, target, u)],
-           per=[(y, [(유효 창 순번, [부분 문자열…])…])], need=[유효 창마다 물을 부분 문자열(정렬 · 중복 없음)])."""
+    """Scoring plan of one image — the Python computation before the GPU (edit alignment · coords · substrings · window
+    weights), done per image.
+    `run` builds it in advance in the CPU workers (`_prepare`) and attaches it to the record's 'plan'; `score_windows` uses
+    an attached plan as is when it matches the current arguments, and builds it on the spot with this function when it is
+    absent or does not match — either way the values are the same.
+    → dict(text, ys, boundary, n_windows, local=[r['windows'] indices of the valid windows], meta=[dict(slot_ids, target, u)],
+           per=[(y, [(valid window ordinal, [substrings…])…])], need=[substrings to ask per valid window (sorted · no
+           duplicates)])."""
     a = record['text']; L = len(a)
     ys = hypotheses_of(a, hyps_y, char_index)
     local, spans, meta = [], [], []
@@ -252,7 +273,8 @@ def plan_record(record, hyps_y, char_index, boundary=False):
 
 
 def _plan_for(record, hyps, char_index, boundary):
-    """기록에 붙은 계획이 이 호출(전사 · 가설 · 경계 변형 · 창 수)과 맞으면 그것을, 아니면 새로 만든 계획."""
+    """The plan attached to the record if it matches this call (transcript · hypotheses · boundary variants · number of
+    windows), else a newly built plan."""
     p = record.get('plan')
     ys = hypotheses_of(record['text'], hyps.get(record['key'], []), char_index)
     if (p is not None and p.get('text') == record['text'] and p.get('ys') == ys and p.get('boundary') == bool(boundary)
@@ -263,18 +285,22 @@ def _plan_for(record, hyps, char_index, boundary):
 
 def score_windows(records, hyps, model, char_index, device, cand_batch=CANDIDATE_BATCH, *, boundary=False,
                   aggregation='coverage', detail=False, tf32=None):
-    """records = [dict(key, text=a, windows=`window.prepare` 의 창 목록[, plan=`plan_record`])] · hyps = {key: [y, …]} → {key: {y: W(y)}}(a 가 맨 앞).
-    boundary: 경계 변형(최대 넷)의 logsumexp 를 창 점수로(원고 v1) · 기본은 핵심 부분 문자열 하나 ·
-    aggregation: 'coverage'(기본 · 겹침 가중) | 'sum'(원고 v1) · detail: 참이면 (W, 창별 원점수) —
-    원점수 = {key: dict(windows=[dict(slot_ids, target, u)], s={y: [창마다 s_w(y) | None]})}(None = 그 창에서 못 잼).
-    기록에 미리 만든 계획(`plan_record`)이 있고 이 호출과 맞으면 그것을 쓴다(GPU 프로세스의 직렬 Python 계산을 줄임 · 값은 같다).
-    tf32: 인식기 행렬곱 정밀도(`nbest.precision` · None → LEGIT_AR_TF32 · 기본 TF32)."""
+    """records = [dict(key, text=a, windows=window list of `window.prepare`[, plan=`plan_record`])] ·
+    hyps = {key: [y, …]} → {key: {y: V(y)}} (a first).
+    boundary: window score = logsumexp of the boundary variants (up to four) (earlier window definition) · the default is one core substring ·
+    aggregation: 'coverage' (default · overlap weights) | 'sum' (earlier window definition) · detail: if true, (W, per-window raw scores) —
+    raw scores = {key: dict(windows=[dict(slot_ids, target, u)], s={y: [s_w(y) per window | None]})} (None = not measured
+    in that window).
+    When the record has a prebuilt plan (`plan_record`) that matches this call, it is used (less serial Python work in the
+    GPU process · the same values).
+    tf32: matmul precision of the recognizer (`nbest.precision` · None → LEGIT_AR_TF32 · default TF32)."""
     import torch
     from tools.rescore import nbest
     if aggregation not in AGGREGATIONS:
         raise ValueError(f'aggregation must be one of {AGGREGATIONS}')
     dec = model.decoder
-    wins, plan = [], []                                   # 창(장 번호 · AR 입력) · 장마다 (계획, 첫 창의 전역 번호)
+    wins, plan = [], []                                   # windows (image index · AR input) · per image
+                                                          # (plan, global index of its first window)
     for ri, r in enumerate(records):
         p = _plan_for(r, hyps, char_index, boundary)
         off = len(wins)
@@ -306,20 +332,22 @@ def score_windows(records, hyps, model, char_index, device, cand_batch=CANDIDATE
                 vals = [scores[(wi, v)] for v in vs if (wi, v) in scores]
                 each.append(float(np.logaddexp.reduce(vals)) if vals else None)
             s_all[y] = each
-        # 창 정보는 상수 키로 새로 만든다 — 일꾼에서 풀어 온 dict 의 키는 장마다 다른 문자열 객체라 원점수 pickle 바이트가 달라진다
+        # build the window info with constant keys — keys of dicts unpickled from workers are distinct
+        # string objects per image, so the raw-score pickle bytes would differ
         raw[r['key']] = dict(windows=[dict(slot_ids=list(m['slot_ids']), target=m['target'], u=m['u']) for m in p['meta']], s=s_all)
     out = aggregate(raw, aggregation)
     return (out, raw) if detail else out
 
 
-# ---------------------------------------------------------------- 묶음 실행(저장된 attention 기록 · 원본 LMDB)
+# ---------------------------------------------------------------- batch runs (stored attention records · original LMDB)
 
 _W = {}
 
 
 def _init(dataset, data_root, charout_root, boxes_path, kwargs, stored_geometry=True, planning=None):
-    """일꾼 초기화 — dataset 은 기본 셋(None 이면 일감마다 `_prepare(..., dataset=)` 로 받는다 · 셋마다 원본 LMDB 를 처음 쓸 때 연다) ·
-    planning = dict(char_index, boundary) 이면 `_prepare` 가 장마다 채점 계획(`plan_record`)까지 만든다."""
+    """Worker initialization — dataset is the default dataset (if None, each task passes it via
+    `_prepare(..., dataset=)` · each dataset's original LMDB is opened on first use) ·
+    with planning = dict(char_index, boundary), `_prepare` also builds the scoring plan (`plan_record`) per image."""
     for name in ('OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS'):
         os.environ[name] = '1'
     import cv2
@@ -335,7 +363,7 @@ def _init(dataset, data_root, charout_root, boxes_path, kwargs, stored_geometry=
 
 
 def read_image(env, index):
-    """원본 LMDB(image-%09d) 한 장 → RGB uint8 배열 | None."""
+    """One image of the original LMDB (image-%09d) → RGB uint8 array | None."""
     import io
     from PIL import Image
     with env.begin() as txn:
@@ -344,7 +372,7 @@ def read_image(env, index):
 
 
 def _source(dataset):
-    """일꾼 안의 원본 LMDB — 셋마다 한 번 열어 둔다."""
+    """The original LMDB inside a worker — opened once per dataset."""
     env = _W['sources'].get(dataset)
     if env is None:
         import lmdb
@@ -354,8 +382,9 @@ def _source(dataset):
 
 
 def _prepare(indices, hyps=None, dataset=None):
-    """장마다 창(`window.prepare`) — hyps({key: [y, …]})와 `_init` 의 planning 이 있으면 채점 계획(`plan_record`)도 붙인다.
-    dataset 을 안 주면 `_init` 의 기본 셋."""
+    """Windows per image (`window.prepare`) — with hyps ({key: [y, …]}) and the planning of `_init`, the scoring plan
+    (`plan_record`) is attached too.
+    Without dataset, the default dataset of `_init`."""
     from tools.rescore import window
     dataset = dataset or _W['dataset']
     out = []
@@ -365,8 +394,9 @@ def _prepare(indices, hyps=None, dataset=None):
             if rgb is None:
                 out.append(dict(index=index, skip='missing_image')); continue
             rec = window.stored_record(dataset, index, root=_W['charout_root'])
-            # 미리 계산한 rbox 는 저장 기록(옛 전사)의 기하로 만든 것 — 교사 강제 기록을 읽은 장에는 쓰지 않고 그 자리에서 계산한다.
-            # pickle 값이 목록이 아니면(오류 문자열) rbox 실패로 본다(TRW1.5).
+            # The precomputed rbox was built from the geometry of the stored record (old transcript) — not used for
+            # images that read a teacher-forced record; computed on the spot instead.
+            # If the pickle value is not a list (an error string), it counts as rbox failure (TRW1.5).
             boxes = None if rec is None or rec.get('source') == window.FORCED else _W.get('boxes', {}).get(f"{dataset}#{index}")
             gi, bg0 = (window.paper_inputs(rgb, rec, dataset, index, root=_W['charout_root'])
                        if rec is not None and _W['stored_geometry'] else (None, False))
@@ -375,18 +405,21 @@ def _prepare(indices, hyps=None, dataset=None):
             planning = _W.get('planning')
             if hyps is not None and planning and 'text' in got and 'windows' in got:
                 key = f"{dataset}#{index}"
-                try:                                                 # 계획이 실패하면 붙이지 않는다 — GPU 쪽이 다시 만들며 같은 오류를 낸다
+                try:                                                 # planning failed → no plan attached; the GPU side
+                                                                     # rebuilds it and raises the same error
                     got['plan'] = plan_record(dict(got, key=key), hyps.get(key, []), planning['char_index'], planning['boundary'])
                 except Exception:
                     pass
             out.append(got)
-        except Exception as exc:                                     # 한 장의 오류로 묶음 전체를 멈추지 않는다 — 결과에 열쇠가 없다
+        except Exception as exc:                                     # one image's error does not stop the batch — the
+                                                                     # image has no key in the result
             out.append(dict(index=index, error=f'{type(exc).__name__}: {exc}'))
     return out
 
 
 def _batches(pool, indices, batch_size, worker_chunk, hyps=None, dataset=None):
-    """입력 순서대로 batch_size 장씩 — 다음 묶음을 미리 하나 제출해 둔다. hyps · dataset 을 주면 일감마다 그 장들의 가설만 넘긴다."""
+    """batch_size images at a time, in input order — the next batch is submitted one ahead. With hyps · dataset, each
+    task gets only the hypotheses of its images."""
     def task(part):
         if hyps is None:
             return pool.submit(_prepare, part)
@@ -407,8 +440,10 @@ def _batches(pool, indices, batch_size, worker_chunk, hyps=None, dataset=None):
 
 
 def _stream(pool, jobs, batch_size, worker_chunk, hyps=None):
-    """jobs = [(dataset, 장 번호들, 묶음 번호)] → (job 순번, 묶음, 그 job 의 마지막 묶음인가) — 묶음은 job 안에서만 batch_size 장씩
-    자르고(묶음 구성은 job 마다 `_batches` 와 같다), 다음 묶음은 다음 job 의 첫 묶음이라도 미리 하나 제출해 둔다(한 풀을 회차 내내)."""
+    """jobs = [(dataset, image indices, chunk index)] → (job ordinal, batch, whether it is the job's last batch) —
+    batches are cut batch_size images at a time only within a job (the batch composition per job is the same as
+    `_batches`), and the next batch is submitted one ahead even when it is the first batch of the next job (one pool for
+    the whole run)."""
     order = [(j, s) for j, (_d, idx, _c) in enumerate(jobs) for s in range(0, len(idx), batch_size)]
 
     def task(dataset, part):
@@ -436,15 +471,22 @@ def _stream(pool, jobs, batch_size, worker_chunk, hyps=None):
 def run(pool_rows, hyps, out, device, *, data_root=None, charout_root=None, boxes_path=None, workers=14, cpu_batch=256,
         shard=(0, 1), region='trw15', hops=1, fallback='trw15', stored_geometry=False, rotate=False, ptl='refined',
         segmentation='nearest', boundary=False, aggregation='coverage', raw=True, tf32=None, checkpoint=None):
-    """장 목록 [(dataset, index)] → out/<셋>__c<묶음>.json({key: {y: W}}) · 이미 있는 묶음은 건너뛴다 · 끝나면 out/_done_s<i>of<n>.
-    기본은 새 정의(개선 p_tl · 가장 가까운 씨앗 · TRW · 회전 없음 · 핵심 부분 문자열 · 겹침 가중) · 원고 v1 은 `**PAPER_V1_RUN`.
-    stored_geometry=True 면 원고 회차처럼 charout 저장소의 p_tl · tl_4 · 분할 행을 먼저 읽는다(`window.paper_inputs` · 원고 v1 정의) ·
-    boxes_path 는 원고 회차의 rbox pickle(교사 강제 기록 장에는 쓰지 않음) ·
-    raw=True 면 같은 이름의 <묶음>.raw.pkl.gz 에 창별 원점수(`score_windows(detail=True)`)를 함께 쓴다 — 집계 · 계수를 GPU 없이 다시 낼 때.
-    CPU 일꾼이 창과 함께 채점 계획(`plan_record` · 편집 정렬 · 부분 문자열)도 만들어, GPU 프로세스는 인코더 · 디코더와 집계만 한다.
-    일꾼 풀은 회차 전체에서 하나이고, 셋 · 5,000장 묶음이 바뀌어도 다음 묶음의 창 준비를 GPU 채점과 겹친다(`_stream`).
-    tf32: 인식기 행렬곱 정밀도(None → LEGIT_AR_TF32 · 기본 TF32) — 실제로 쓴 값을 원점수 사본의 definition 에 남긴다 ·
-    checkpoint: 인식기 가중치(None → `checkpoint_path`)."""
+    """Image list [(dataset, index)] → out/<dataset>__c<chunk>.json ({key: {y: V(y)}}) · existing chunks are skipped ·
+    out/_done_s<i>of<n> at the end.
+    The default is the new definition (refined p_tl · nearest seed · TRW · no rotation · core substring · overlap
+    weights) · the earlier window definition is `**PAPER_V1_RUN`.
+    stored_geometry=True first reads the p_tl · tl_4 · segmentation rows of the charout store, as the paper runs did
+    (`window.paper_inputs` · earlier window definition) ·
+    boxes_path is the rbox pickle of the paper runs (not used for images with a teacher-forced record) ·
+    raw=True also writes the per-window raw scores (`score_windows(detail=True)`) to a <chunk>.raw.pkl.gz of the same
+    name — to redo the aggregation · coefficients without a GPU.
+    The CPU workers build the scoring plan (`plan_record` · edit alignment · substrings) along with the windows, so the GPU
+    process runs only the encoder · decoder and the aggregation.
+    There is one worker pool for the whole run, and the window preparation of the next batch overlaps the GPU scoring even
+    when the dataset · 5,000-image chunk changes (`_stream`).
+    tf32: matmul precision of the recognizer (None → LEGIT_AR_TF32 · default TF32) — the value actually used is recorded
+    in the definition of the raw-score copy ·
+    checkpoint: recognizer weights (None → `checkpoint_path`)."""
     from tools._io import local_path
     from tools.rescore import nbest, window
     data_root = Path(os.path.expanduser(data_root)) if data_root else Path(local_path('data_root'))
@@ -457,7 +499,7 @@ def run(pool_rows, hyps, out, device, *, data_root=None, charout_root=None, boxe
     model, char_index = load_reader(device, checkpoint)
     out = Path(out); out.mkdir(parents=True, exist_ok=True)
     if stored_geometry and (ptl != 'original' or segmentation != 'watershed'):
-        raise ValueError('stored_geometry reads the paper v1 geometry (original p_tl · watershed) — pass ptl/segmentation of v1')
+        raise ValueError('stored_geometry reads the geometry of the earlier window definition (original p_tl · watershed) — pass its ptl/segmentation')
     kwargs = dict(region=region, hops=hops, fallback=fallback, rotate=rotate, ptl=ptl, segmentation=segmentation)
     t0 = time.time()
     todo = []
@@ -470,7 +512,8 @@ def run(pool_rows, hyps, out, device, *, data_root=None, charout_root=None, boxe
 
     def finish(dataset, c, res, detail, skipped):
         f = out / f"{dataset.replace('/', '__')}__c{c:03d}.json"
-        if raw:                                                       # 원점수 사본을 먼저 — 묶음 JSON 이 있으면 끝난 묶음이다
+        if raw:                                                       # raw-score copy first — a chunk is finished when its
+                                                                      # chunk JSON exists
             import gzip
             import pickle
             rf = f.with_name(f.stem + '.raw.pkl.gz'); rt = rf.with_name(rf.name + '.tmp')
@@ -483,7 +526,7 @@ def run(pool_rows, hyps, out, device, *, data_root=None, charout_root=None, boxe
         print(f'{dataset}__c{c:03d}: {len(res):,} images · skipped {skipped} · {time.time() - t0:.0f}s so far', flush=True)
     errors = []
     if todo:
-        planning = dict(char_index=char_index, boundary=boundary)    # 채점 계획(편집 정렬 · 부분 문자열)도 CPU 일꾼에서
+        planning = dict(char_index=char_index, boundary=boundary)    # scoring plan also in the CPU workers
         with ProcessPoolExecutor(workers, initializer=_init,
                                  initargs=(None, data_root, charout_root, boxes_path, kwargs, stored_geometry, planning)) as ex:
             res, detail, skipped = {}, {}, 0
@@ -498,7 +541,8 @@ def run(pool_rows, hyps, out, device, *, data_root=None, charout_root=None, boxe
                     got, d = score_windows(good, hyps, model, char_index, device, boundary=boundary, aggregation=aggregation,
                                            detail=True, tf32=tf32)
                     res.update(got); detail.update(d)
-                if last:                                              # 이 묶음의 마지막 — 쓰는 동안 일꾼은 다음 묶음을 만든다
+                if last:                                              # last batch of this chunk — the workers build the next
+                                                                      # batch while it is written
                     finish(dataset, c, res, detail, skipped)
                     res, detail, skipped = {}, {}, 0
     efile = out / f'_errors_s{shard[0]}of{shard[1]}.json'
@@ -511,11 +555,11 @@ def run(pool_rows, hyps, out, device, *, data_root=None, charout_root=None, boxe
 
 
 PAPER_V1_RUN = dict(region='trer', rotate=True, ptl='original', segmentation='watershed', boundary=True, aggregation='sum',
-                    stored_geometry=True, tf32=False)   # `run(..., **PAPER_V1_RUN)` — 원고 v1 저장 점수와 같은 실행(fp32)
+                    stored_geometry=True, tf32=False)   # `run(..., **PAPER_V1_RUN)` — the stored scores of the earlier window definition (fp32)
 
 
 def pack_record(rec):
-    """attention 기록 → 저장 형식 bytes(npz · 지도 float16) — `window.unpack_record` 가 읽는 모양."""
+    """attention record → stored-format bytes (npz · maps float16) — the shape `window.unpack_record` reads."""
     import io
     buf = io.BytesIO()
     maps = np.asarray(rec['maps'], dtype=np.float16)
@@ -525,9 +569,11 @@ def pack_record(rec):
 
 
 def dump_records(pool_rows, texts, root, device, *, data_root=None, tf32=None, checkpoint=None):
-    """저장된 attention 덤프 없이 시작할 때 — 장마다 그림 + 전사(보통 빔의 greedy a)로 `window.attention_record` 를 만들어
-    root/<셋>/svtrv2-ar.lmdb 에 저장 형식으로 쓴다. 이어서 `run(..., charout_root=root, stored_geometry=False)`.
-    texts = {key: a} · 이미 있는 장은 건너뛴다 · tf32: 인식기 행렬곱 정밀도(`nbest.precision`) · checkpoint: 인식기 가중치."""
+    """For starting without a stored attention dump — builds `window.attention_record` per image from the image + a
+    transcript (usually the beam's greedy a) and writes it in the stored format to root/<dataset>/svtrv2-ar.lmdb.
+    Then `run(..., charout_root=root, stored_geometry=False)`.
+    texts = {key: a} · images already present are skipped · tf32: recognizer matmul precision (`nbest.precision`) ·
+    checkpoint: recognizer weights."""
     import lmdb
     from tools._io import local_path
     from tools.rescore import nbest, window
@@ -568,7 +614,7 @@ def dump_records(pool_rows, texts, root, device, *, data_root=None, tf32=None, c
 
 def main(argv=None):
     from tools._io import read_tsv
-    ap = argparse.ArgumentParser(description='Window scores W(y) of beam hypotheses, in chunks of 5,000 images per dataset')
+    ap = argparse.ArgumentParser(description='Window scores V(y) of beam hypotheses, in chunks of 5,000 images per dataset')
     ap.add_argument('--pool', type=Path, required=True, help='TSV with the columns dataset and sample_idx')
     ap.add_argument('--hyps', type=Path, required=True, help='JSON {key: [y, …]} — key = "<dataset>#<sample_idx>"')
     ap.add_argument('--out', type=Path, required=True)

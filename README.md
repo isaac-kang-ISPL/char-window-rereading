@@ -21,9 +21,9 @@ beam score and the ByT5-XL score select METROID.*
 
 1. **Beam.** A frozen autoregressive recognizer (SVTRv2-AR, public weights) returns its greedy transcript *a* and the
    top 10 hypotheses of a beam search.
-2. **Character windows.** Its decoder cross-attention locates each character of *a*; the window of a character is cut
-   from the text region at the midpoints to its neighbors, so that it covers the character and one neighbor on each
-   side (MW3).
+2. **Character windows.** Its decoder cross-attention locates each character of *a*; the window of position *i* covers
+   positions *i*−1, *i* and *i*+1 of the text region, and its boundaries are the midpoints between these positions and
+   the next ones (W3 in the paper, `mw3` in the code).
 3. **Window re-reading.** The same recognizer scores, by teacher forcing, the substring of every hypothesis that falls
    in each window; the overlap-weighted sum (weights ω_w) is the window score *V(y)*.
 4. **Decision.** The window score is combined with the beam score, a length term and the ByT5-XL pseudo-log-likelihood
@@ -31,6 +31,10 @@ beam score and the ByT5-XL score select METROID.*
    trained: the coefficients are selected once on 10,000 validation images (Union14M-L-val).
 5. **Optional image-conditioned extension.** A frozen Qwen3.5-27B-GPTQ-Int4 judges whether the text is occluded,
    handwritten or spelled nonstandardly, and the coefficients change for those images.
+
+**Paper ↔ code.** α = `omega` (window), β = `beta` (length), γ = `mu` (ByT5-XL), τ = `tau`; the window score *V(y)* is
+`W` in the window tables and its weights ω_w are `u_w`; the windows W1 · W3 · W5 · W7 · W9 of the paper are `--window
+mw1` · `mw3` · `mw5` · `mw7` · `mw9`.
 
 ```
 S(y) = Δb(y) + α·ΔV(y) + β·(|y| − |a|) + γ·ΔPLL(y)          (Δ: value of y minus value of a)
@@ -174,10 +178,9 @@ python -m tools.rescore.cli apply  --run run_cute --coef coef.json
 
 `score` stores everything the decision needs, so `select` and `apply` run without a GPU. The defaults are the setting
 of the manuscript: beam width 10 with 10 characters expanded per hypothesis, cached keys / values, TF32 matmuls on
-Ampere or newer GPUs, MW3 windows (`--window`: `mw1` · `mw5` · `mw7` · `mw9` change the width, `w3` is the segment
-window of the supplementary tables), and ByT5-XL in bfloat16. `--v1-recognizer` is the recognizer setting of the first
-manuscript version (beam 20 · 20, no cache, fp32). The setting is stored in the run protocol, so runs of different
-settings never mix. `python -m tools.rescore.cli --help` lists the remaining options (CPU-side window preparation on a
+Ampere or newer GPUs, the W3 windows of the paper (`--window mw3`; `mw1` · `mw5` · `mw7` · `mw9` are the W1–W9 widths,
+`w3` is an earlier segment-window definition that the paper does not use), and ByT5-XL in bfloat16. The setting is
+stored in the run protocol, so runs of different settings never mix. `python -m tools.rescore.cli --help` lists the remaining options (CPU-side window preparation on a
 separate machine, batch sizes).
 
 ## Reproduce the paper's tables (CPU)
@@ -193,6 +196,11 @@ and host names are removed or made relative (the changed keys are listed in its 
 tar xzf char-window-rereading-data.tar.gz
 export LEGIT_DATA=$PWD/char-window-rereading-data
 ```
+
+The reproduction runs on the CPU and needs only numpy, scipy, scikit-image, pyyaml, lmdb and pillow
+(`pip install numpy scipy scikit-image==0.26.0 pyyaml lmdb pillow`; torch, transformers and OpenCV are not imported).
+`python -m tools.experiments.rescore.reproduce --list` shows the stages; those whose inputs are not in the archive are
+marked and are not run.
 
 ### Tables 2 and 3 (SVTRv2-AR main results and term removal)
 
@@ -277,7 +285,7 @@ SHA-256 (`recorded`) instead of recomputing them.
 | `tools/rescore/cli.py` | command-line entry point: `read` (image files), `score` / `select` / `apply` (benchmarks), `judge` |
 | `tools/rescore/nbest.py` | SVTRv2-AR greedy transcript and beam search (GPU) |
 | `tools/rescore/position.py`, `region.py`, `midpoint.py`, `window.py` | character points from the attention maps, the text region, MW3 midpoint windows, window crops |
-| `tools/rescore/segment.py` | segment windows (W3) of the supplementary comparisons |
+| `tools/rescore/segment.py` | segments of an earlier window definition (`--window w3`; not used in the paper) |
 | `tools/rescore/window_score.py` | window scores and their overlap-weighted sum V(y) (GPU) |
 | `tools/rescore/lm.py` | ByT5 pseudo-log-likelihood (GPU) |
 | `tools/rescore/hypotheses.py`, `decide.py` | candidates (a and the beam top 10) and the decision rule S(y) > τ |

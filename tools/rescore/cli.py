@@ -6,16 +6,15 @@
     python -m tools.rescore.cli apply  --run run_cute --coef coef.json        # outputs and accuracy (CPU)
     python -m tools.rescore.cli read   word1.png word2.jpg [--condition]        # demo on image files (GPU)
 
-Image-conditioned extension (manuscript Section III-F, `condition`): `judge --run <run> --out judge.jsonl` asks
+Image-conditioned extension (manuscript Section III-G, `condition`): `judge --run <run> --out judge.jsonl` asks
 Qwen3.5-27B-GPTQ-Int4 (vLLM 0.28) about the images whose output can change with the condition coefficients, and
 `apply --run <run> --condition judge.jsonl` decides with them; `read --condition` does both for image files.
 
 The defaults are the setting of the manuscript: SVTRv2-AR beam 10 · 10 (width 10, 10 characters expanded per
 hypothesis) with cached keys / values and TF32 matmuls on Ampere or newer GPUs, MW3 midpoint windows (`--window`;
-mw1 · mw5 · mw7 · mw9 change the width, w3 is the segment window of the supplementary tables), ByT5-XL PLL in bfloat16,
-and the coefficients `FINAL` (window α = omega 0.4, length β = beta 1, ByT5 γ = mu 0.1, τ = tau 0). `--v1-recognizer` is
-the recognizer of the first manuscript version (beam 20 · 20, no cache, fp32), and --beam-width / --token-topk / --no-kv /
---fp32 change one part. The setting is stored in the run protocol, so runs of different settings never mix.
+mw1 · mw5 · mw7 · mw9 change the width; w3 is an earlier segment-window definition, not used in the paper), ByT5-XL PLL
+in bfloat16, and the coefficients `FINAL` (window α = omega 0.4, length β = beta 1, ByT5 γ = mu 0.1, τ = tau 0);
+--beam-width / --token-topk / --no-kv / --fp32 change one part of the recognizer setting. The setting is stored in the run protocol, so runs of different settings never mix.
 
 `score` writes one JSON line per image to <out>/scores.jsonl: the greedy transcript a with its log P, the beam top 10,
 the window score of a and of every hypothesis, and the ByT5-XL PLL of every string — everything the decision needs,
@@ -228,10 +227,9 @@ def main(argv=None):
     s.add_argument('--token-topk', type=int, help='characters expanded per live hypothesis (default 10)')
     s.add_argument('--no-kv', action='store_true', help='re-run the whole prefix at every decoding step (default: cached)')
     s.add_argument('--fp32', action='store_true', help='fp32 matmuls in the recognizer (default: TF32 on Ampere or newer)')
-    s.add_argument('--v1-recognizer', '--paper-recognizer', dest='v1_recognizer', action='store_true',
-                   help='the first manuscript version: beam 20 · 20, no cache, fp32 (single options above still apply)')
     s.add_argument('--window', choices=WINDOWS, default=WINDOW,
-                   help='character windows: MW3 midpoint windows of the manuscript (default), other widths, or W3 segments')
+                   help='character windows: mw3 = the W3 midpoint windows of the paper (default); mw1/mw5/mw7/mw9 other widths; '
+                        'w3 = an earlier segment-window definition, not used in the paper')
     sp = sub.add_parser('prepare', help='CPU-only window preparation; no GPU or model loading')
     sp.add_argument('--run', type=Path, required=True, help='run directory containing inputs/ from score --stage beam')
     sp.add_argument('--prepared-cache', type=Path)
@@ -258,14 +256,12 @@ def main(argv=None):
     s5.add_argument('--judge-model', help='local path or name of Qwen3.5-27B-GPTQ-Int4')
     a = ap.parse_args(argv)
     if a.cmd == 'score':
-        from tools.rescore.nbest import PAPER
         keys = a.keys.read_text().split() if a.keys else None
-        paper = PAPER if a.v1_recognizer else {}
         score(a.dataset, a.out, a.device, keys, a.limit, batch=a.batch, checkpoint=a.checkpoint, workers=a.workers,
               stage=a.stage, prepared_cache=a.prepared_cache, cache_only=a.cache_only, pll_images=a.pll_images,
               legacy_attention=a.legacy_attention, no_pll_cache=a.no_pll_cache,
-              beam_width=a.beam_width or paper.get('width'), token_topk=a.token_topk or paper.get('token_topk'),
-              kv=False if a.no_kv else paper.get('kv'), tf32=False if a.fp32 else paper.get('tf32'), window=a.window)
+              beam_width=a.beam_width, token_topk=a.token_topk, kv=False if a.no_kv else None,
+              tf32=False if a.fp32 else None, window=a.window)
     elif a.cmd == 'prepare':
         from tools.rescore.pipeline import prepare_run
         prepare_run(a.run, a.prepared_cache, a.workers)

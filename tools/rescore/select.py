@@ -1,9 +1,11 @@
 """Coefficients — one grid for every term, chosen on the validation set by the number of correct images.
 
-Grid (`GRID`): α (ByT5), γ (window) and δ (ILM) start from COEF = 0 and doubling steps 0.0125 … 0.4; the ByT5 weight goes on to 1.6 and
-the window weight to 3.2 (with coverage-weighted window scores some recognizers choose a window weight of 0.4 or more); β ∈ {0, .25, .5, 1, 2}; τ ∈ {0, .125, .25, .5, 1}. Every term may take 0. Among settings with the same number of correct validation images
-the one with the smaller coefficient sum (α + γ, or δ + α) wins; the remaining ties go to the first setting in grid
-order. The chosen setting is applied once to the evaluation images.
+Grid (`GRID`): α (window, code `omega`), γ (ByT5, code `mu`) and δ (ILM, comparison rows only) start from COEF = 0 and
+doubling steps 0.0125 … 0.4; the ByT5 weight goes on to 1.6 and the window weight to 3.2 (with overlap-weighted window
+scores some recognizers choose a window weight of 0.4 or more); β ∈ {0, .25, .5, 1, 2}; τ ∈ {0, .125, .25, .5, 1}.
+Every term may take 0. Among settings with the same number of correct validation images the one with the smaller
+coefficient sum (α + γ, or δ + γ) wins; the remaining ties go to the first setting in grid order. The chosen setting
+is applied once to the evaluation images.
 
 Partial configurations of the manuscript tables keep the final coefficients and drop terms (`ablation`). When a row
 replaces the window input (another window construction, whole-image re-reading) or the language model, only that
@@ -31,7 +33,7 @@ def n_correct(b, lm, mu, beta, tau, omega=0.):
 
 
 def select(items, lm, fixed=None, grid=None):
-    """Best (μ, β, τ, ω) on items — fixed = {name: values} restricts a coefficient. → dict(mu, beta, tau, omega)."""
+    """Best (γ, β, τ, α) on items — fixed = {name: values} restricts a coefficient. → dict(mu=γ, beta, tau, omega=α)."""
     return select_counted(items, lm, fixed, grid)[0]
 
 
@@ -66,7 +68,7 @@ def final_params(dev, Wd, lm, clusters=False):
 
 
 def refit_omega(dev, Vd, lm, F, grid=None, clusters=False):
-    """Final coefficients F with another window input Vd — only γ is chosen again (ties: smaller γ). → (F', correct)."""
+    """Final coefficients F with another window input Vd — only α (omega) is chosen again (ties: smaller α). → (F', correct)."""
     D = _dev(dev, Vd, clusters)
     best = None
     for om in (grid or GRID['omega']):
@@ -77,7 +79,7 @@ def refit_omega(dev, Vd, lm, F, grid=None, clusters=False):
 
 
 def refit_mu(dev, Wd, lm, F, clusters=False):
-    """Final coefficients F with another language model lm — only α is chosen again (ties: smaller α). → (F', correct)."""
+    """Final coefficients F with another language model lm — only γ (mu) is chosen again (ties: smaller γ). → (F', correct)."""
     D = _dev(dev, Wd, clusters)
     best = None
     for mu in GRID['mu']:
@@ -88,7 +90,7 @@ def refit_mu(dev, Wd, lm, F, clusters=False):
 
 
 def select_lam(dev, lm, ilm, mu, beta, tau, lams=LAM):
-    """δ of the ILM rows with α, β, τ fixed (ties: smaller δ). → (δ, correct)."""
+    """δ of the ILM comparison rows with γ, β, τ fixed (ties: smaller δ). → (δ, correct)."""
     b = batch(dev)
     best = None
     for lam in lams:

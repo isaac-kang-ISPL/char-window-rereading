@@ -1,4 +1,4 @@
-"""Image-conditioned extension (manuscript Section III-F, Table 1) — optional; the fixed combination is the main method.
+"""Image-conditioned extension (manuscript Section III-G, Table 1) — optional; the fixed combination is the main method.
 
 A frozen Qwen3.5-27B-GPTQ-Int4 sees only the image and answers three yes/no questions in one request (`PROMPT`): is a
 character occluded (p_O), is the text handwritten (p_H), do clearly visible letters spell a nonstandard string (p_S).

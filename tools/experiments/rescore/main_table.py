@@ -25,6 +25,8 @@ from tools.rescore.metrics import accuracy, groups, pair
 
 RES = 'reference/ar_trer_eval'
 ARMS = ('빔 1위', '+ ByT5', '+ W 창', '+ ByT5 + W 창')
+# console names of the rows (the result files keep the stored keys): beam top 1, window term = re-read
+LABEL = {'빔 1위': 'Beam', '+ W 창': '+ re-read', '+ ByT5 + W 창': '+ ByT5 + re-read'}
 DEFAULT = 'trwnn'
 WINDOW = '개선 p_tl · 가장 가까운 씨앗 분할 · TRW 띠(x-height 1.5배) · 이웃 TR · 회전 없음 · 핵심 부분 문자열 · 겹침 가중'
 PLL_NAME = 'pll_variants V1 · ByT5-XL bf16 · 한 회차 · ci'
@@ -65,7 +67,7 @@ def main():
         venn_correct = accuracy(test, [pr[k] for k in vi])['correct']
         res['rows'][arm] = dict(params=prm, cb=a['cb'], ub=a['ub'], correct=a['correct'], venn10k_correct=venn_correct,
                                 vs_base=pair(full, base, pr), groups=groups(full, pr, base))
-        print(arm, prm, round(a['cb'], 2), round(a['ub'], 2), a['correct'], venn_correct, flush=True)
+        print(LABEL.get(arm, arm), prm, round(a['cb'], 2), round(a['ub'], 2), a['correct'], venn_correct, flush=True)
     ilm = store.ilm_table('svtrv2-ar')
     for name, mus in (('− ILM', (0.,)), ('− ILM + ByT5', S.GRID['mu'])):
         best = None

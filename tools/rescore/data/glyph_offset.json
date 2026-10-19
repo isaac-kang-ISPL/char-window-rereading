@@ -1,8 +1,8 @@
 {
- "unit": "x-height · 화면 좌표에서 «위»가 +",
- "what": "자리 점(`p90+soft`)이 참 textline 보다 얼마나 위에 찍히는가",
- "how": "합성에서 잰다 — 참 기준선이 폰트 계량값에서 나오므로 어텐션을 어텐션으로 검증하는 순환이 없다. 배포 증강 갈래(`Dd4TO`) 위에서 잰 값이다.",
- "src": "글자마다 **자연 분포 풀**(`synth_nat`)을 먼저 쓰고, 자리가 25 미만이면 **글자 균형 풀**(`synth_bal`)로 채운다. 자연은 배포 분포이지만 자연어 꼬리라 드문 글자를 못 채우고, 균형은 94자를 채우지만 임의 문자열이다.",
+ "unit": "x-height · «up» is + in screen coordinates",
+ "what": "how far above the true text line the character point (`p90+soft`) falls",
+ "how": "measured on synthetic images — the true baseline comes from the font metrics, so attention is not checked against attention. Measured on the augmentation arm of the release (`Dd4TO`).",
+ "src": "for each character the **natural-distribution pool** (`synth_nat`) is used first, and the **character-balanced pool** (`synth_bal`) fills in when it has fewer than 25 positions. The natural pool follows the release distribution but its natural-language tail leaves rare characters short; the balanced pool covers all 94 characters with random strings.",
  "n_char": 93,
  "n_pos": 21738,
  "rows": [
@@ -11,651 +11,651 @@
    "d": 0.2026,
    "spread": 0.0903,
    "n": 70,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "1",
    "d": 0.2227,
    "spread": 0.1851,
    "n": 55,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "2",
    "d": 0.2377,
    "spread": 0.175,
    "n": 33,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "3",
    "d": 0.213,
    "spread": 0.1367,
    "n": 40,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "4",
    "d": 0.0867,
    "spread": 0.1423,
    "n": 30,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "5",
    "d": 0.2576,
    "spread": 0.1184,
    "n": 337,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "6",
    "d": 0.1252,
    "spread": 0.1446,
    "n": 351,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "7",
    "d": 0.3519,
    "spread": 0.1661,
    "n": 227,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "8",
    "d": 0.191,
    "spread": 0.0909,
    "n": 297,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "9",
    "d": 0.2276,
    "spread": 0.1075,
    "n": 43,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "a",
    "d": 0.0186,
    "spread": 0.0981,
    "n": 561,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "b",
    "d": 0.2529,
    "spread": 0.1476,
    "n": 148,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "c",
    "d": 0.0308,
    "spread": 0.1265,
    "n": 288,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "d",
    "d": 0.1437,
    "spread": 0.153,
    "n": 326,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "e",
    "d": -0.0384,
    "spread": 0.0973,
    "n": 1071,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "f",
    "d": 0.31,
    "spread": 0.2037,
    "n": 191,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "g",
    "d": -0.1237,
    "spread": 0.1053,
    "n": 318,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "h",
    "d": 0.1845,
    "spread": 0.2076,
    "n": 333,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "i",
    "d": 0.2095,
    "spread": 0.1964,
    "n": 808,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "j",
    "d": 0.2186,
    "spread": 0.1566,
    "n": 32,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "k",
    "d": 0.1694,
    "spread": 0.1206,
    "n": 95,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "l",
    "d": 0.1394,
    "spread": 0.2972,
    "n": 389,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "m",
    "d": 0.038,
    "spread": 0.1234,
    "n": 231,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "n",
    "d": 0.0122,
    "spread": 0.1204,
    "n": 648,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "o",
    "d": 0.0138,
    "spread": 0.1031,
    "n": 600,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "p",
    "d": -0.0933,
    "spread": 0.1248,
    "n": 182,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "q",
    "d": -0.1524,
    "spread": 0.1234,
    "n": 268,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "r",
    "d": 0.018,
    "spread": 0.1807,
    "n": 620,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "s",
    "d": 0.0503,
    "spread": 0.106,
    "n": 617,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "t",
    "d": 0.175,
    "spread": 0.1531,
    "n": 643,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "u",
    "d": -0.0545,
    "spread": 0.1402,
    "n": 304,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "v",
    "d": -0.0455,
    "spread": 0.1387,
    "n": 123,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "w",
    "d": -0.0095,
    "spread": 0.1421,
    "n": 141,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "x",
    "d": 0.014,
    "spread": 0.1278,
    "n": 44,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "y",
    "d": -0.1588,
    "spread": 0.1161,
    "n": 201,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "z",
    "d": 0.0599,
    "spread": 0.0925,
    "n": 55,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "A",
    "d": 0.0647,
    "spread": 0.1169,
    "n": 306,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "B",
    "d": 0.2197,
    "spread": 0.107,
    "n": 76,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "C",
    "d": 0.2091,
    "spread": 0.1075,
    "n": 186,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "D",
    "d": 0.2775,
    "spread": 0.1256,
    "n": 166,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "E",
    "d": 0.195,
    "spread": 0.0875,
    "n": 381,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "F",
    "d": 0.1606,
    "spread": 0.1417,
    "n": 106,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "G",
    "d": 0.1523,
    "spread": 0.0735,
    "n": 101,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "H",
    "d": 0.1855,
    "spread": 0.1611,
    "n": 118,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "I",
    "d": 0.1962,
    "spread": 0.1246,
    "n": 226,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "J",
    "d": 0.1033,
    "spread": 0.1994,
    "n": 301,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "K",
    "d": 0.2617,
    "spread": 0.1472,
    "n": 51,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "L",
    "d": 0.1188,
    "spread": 0.1867,
    "n": 116,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "M",
    "d": 0.1398,
    "spread": 0.126,
    "n": 129,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "N",
    "d": 0.1223,
    "spread": 0.1121,
    "n": 270,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "O",
    "d": 0.2229,
    "spread": 0.1012,
    "n": 211,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "P",
    "d": 0.2563,
    "spread": 0.1205,
    "n": 149,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "Q",
    "d": 0.1046,
    "spread": 0.1261,
    "n": 329,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "R",
    "d": 0.1404,
    "spread": 0.1437,
    "n": 231,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "S",
    "d": 0.2326,
    "spread": 0.0966,
    "n": 319,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "T",
    "d": 0.3404,
    "spread": 0.1445,
    "n": 258,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "U",
    "d": 0.0992,
    "spread": 0.1465,
    "n": 128,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "V",
    "d": 0.1839,
    "spread": 0.1131,
    "n": 50,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "W",
    "d": 0.1646,
    "spread": 0.2099,
    "n": 81,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "X",
    "d": 0.1452,
    "spread": 0.1113,
    "n": 32,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "Y",
    "d": 0.2806,
    "spread": 0.1534,
    "n": 61,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "Z",
    "d": 0.2938,
    "spread": 0.1305,
    "n": 346,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "!",
    "d": 0.1534,
    "spread": 0.2276,
    "n": 304,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "\"",
    "d": 0.7234,
    "spread": 0.2604,
    "n": 145,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "#",
    "d": 0.0685,
    "spread": 0.1415,
    "n": 374,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "$",
    "d": 0.1863,
    "spread": 0.1173,
    "n": 277,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "%",
    "d": 0.177,
    "spread": 0.2141,
    "n": 338,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "&",
    "d": 0.1459,
    "spread": 0.1285,
    "n": 270,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "'",
    "d": 0.2865,
    "spread": 0.2559,
    "n": 52,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "(",
    "d": 0.1306,
    "spread": 0.162,
    "n": 34,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": ")",
    "d": 0.0534,
    "spread": 0.2316,
    "n": 31,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "*",
    "d": 0.4512,
    "spread": 0.2385,
    "n": 206,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "+",
    "d": 0.0265,
    "spread": 0.1397,
    "n": 331,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": ",",
    "d": -0.1976,
    "spread": 0.519,
    "n": 115,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "-",
    "d": 0.0069,
    "spread": 0.1179,
    "n": 48,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": ".",
    "d": -0.1618,
    "spread": 0.3419,
    "n": 171,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "/",
    "d": 0.2128,
    "spread": 0.1548,
    "n": 27,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": ":",
    "d": -0.0982,
    "spread": 0.4265,
    "n": 65,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": ";",
    "d": -0.1212,
    "spread": 0.2182,
    "n": 227,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "<",
    "d": 0.0217,
    "spread": 0.1429,
    "n": 354,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "=",
    "d": -0.0063,
    "spread": 0.1167,
    "n": 324,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": ">",
    "d": 0.1099,
    "spread": 0.1142,
    "n": 36,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "?",
    "d": 0.2156,
    "spread": 0.1687,
    "n": 242,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "@",
    "d": -0.0161,
    "spread": 0.1879,
    "n": 25,
-   "src": "자연"
+   "src": "natural"
   },
   {
    "ch": "[",
    "d": 0.2375,
    "spread": 0.2117,
    "n": 291,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "]",
    "d": 0.2211,
    "spread": 0.2042,
    "n": 305,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "^",
    "d": 0.3176,
    "spread": 0.1948,
    "n": 195,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "_",
    "d": -0.5573,
    "spread": 0.2634,
    "n": 170,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "`",
    "d": 0.4012,
    "spread": 0.274,
    "n": 151,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "{",
    "d": 0.0525,
    "spread": 0.1519,
    "n": 293,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "|",
    "d": 0.2021,
    "spread": 0.1805,
    "n": 295,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "}",
    "d": 0.0937,
    "spread": 0.1328,
    "n": 291,
-   "src": "균형"
+   "src": "balanced"
   },
   {
    "ch": "~",
    "d": 0.0107,
    "spread": 0.1281,
    "n": 303,
-   "src": "균형"
+   "src": "balanced"
   }
  ]
 }

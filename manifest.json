@@ -1,6 +1,6 @@
 {
   "component": "legit-paper",
-  "commit": "3848b58638b4a89f66232f59e2020603f7dccb33",
+  "commit": "c1905b2b89934098f8c2755b7fe7e5178c5e2c0a",
   "dirty": [],
   "files": [
     {
@@ -17,7 +17,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "7285cb2883286bf5bcf464cad2c218103a9c9f517a14b3c90cab5595881bda67"
+      "sha256": "c2b8b29fd232297a4726ad29ba995afed1557fef71e24849e92ab2d37c88033c"
     },
     {
       "path": "assets/fig1_framework.png",
@@ -333,7 +333,7 @@
     },
     {
       "path": "requirements.txt",
-      "sha256": "4c93e15149ac656e3bb9e250f3bc61ead3bcd784489a18e9d66e23f6136c7509"
+      "sha256": "b076bfa63a554ee71193d3d150c481d658d535aaf5adb05fafa86ba637013bbd"
     },
     {
       "path": "strtrain/__init__.py",
@@ -381,7 +381,7 @@
     },
     {
       "path": "tools/experiments/rescore/main_table.py",
-      "sha256": "2ad441e2dce9e74c8622108c7267072c03d36668462be01aae08b61aa2202dcb"
+      "sha256": "d107a6d6259ad15d5f4bafa253cec2aa85b5eec51960dfab6d415bfb2edc7939"
     },
     {
       "path": "tools/experiments/rescore/recorded.py",
@@ -389,19 +389,19 @@
     },
     {
       "path": "tools/experiments/rescore/reproduce.py",
-      "sha256": "b806ac7de4a8ca46a1544962b0a81448967aedd610ecf46a7f30a09a08d5440b"
+      "sha256": "2d92ad235ed136a19bc192567d6c5987338524d773ecf93d824c58873efa5f62"
     },
     {
       "path": "tools/rescore/__init__.py",
-      "sha256": "092e12c8a8670cdd2b48044df805ce73e673924d741b73c5192b21efb1592c4e"
+      "sha256": "86382dff3505a66c5d1a6ae9cfd7eb536c4878ee40d0b41573c2e3d362b46406"
     },
     {
       "path": "tools/rescore/ablation.py",
-      "sha256": "ee3a2e31a2ded30e625120977ee52ddcd23d54bfd7e25e6a8c9c6edc3919eb10"
+      "sha256": "cd6bb44ce03c2a31e39ed0314263cc7d6c0df26fbaef47f4ecb2cdea6bb36aa2"
     },
     {
       "path": "tools/rescore/cli.py",
-      "sha256": "7281cf80c2904177e8ffafda997f9545eb1961da729ce85f4287527f90cbd719"
+      "sha256": "cdc8f75d740975dbe77832cc32e685f4f958068cfedbb5d8c5cfcd6042575ed8"
     },
     {
       "path": "tools/rescore/compact_watershed.LICENSE",
@@ -413,7 +413,7 @@
     },
     {
       "path": "tools/rescore/condition.py",
-      "sha256": "1f91ccfe3966df74e2d7782f83a0b9f2f6008c4bc678766bbfae86217839be8b"
+      "sha256": "9e65ec9ed9e81fcab537548b1f682e2ad05d972e81d9121942006144f28af4f7"
     },
     {
       "path": "tools/rescore/curve_spacing.cpp",
@@ -425,7 +425,7 @@
     },
     {
       "path": "tools/rescore/data/glyph_offset.json",
-      "sha256": "4d42cd31cdd6515f59ff04283b72477ebe96ddb1d279aada0c8ff5969c1c476f"
+      "sha256": "409dc33b73d83b3796c1ca2b703e2cd34097727053379a04aa85b8a34d04ed7a"
     },
     {
       "path": "tools/rescore/data/svtrv2-ar.yml",
@@ -433,7 +433,7 @@
     },
     {
       "path": "tools/rescore/decide.py",
-      "sha256": "f5fbf45f5401ef6b94e6998cfcd15d7d1d0886aa8aafc9a6ff74213032e8ac0e"
+      "sha256": "09b7257e5b0f367d84237d59ef83dfef6db18d3bd58e0eacdf41938f00c830fd"
     },
     {
       "path": "tools/rescore/hypotheses.py",
@@ -461,19 +461,19 @@
     },
     {
       "path": "tools/rescore/position.py",
-      "sha256": "4c57c6cae9a47a0660964bbb7baa950bb5afd148b692d37467e613890fbe3dfa"
+      "sha256": "6f098bfd135e2de4feec615eff4d907826950eec41bc412246ee74223d6c38de"
     },
     {
       "path": "tools/rescore/region.py",
-      "sha256": "d720b32f5ebb6e17940cb55764054743ea3b4de065e5a739da7d2c1dde840598"
+      "sha256": "9a25ba4d234100a3ad03fc883c5be6c15067c8d69054d4212716901ed8a0ee3d"
     },
     {
       "path": "tools/rescore/segment.py",
-      "sha256": "e8457a71055be20cf4a17d0bc4eed91a093c8caa32f2bb1696d6a0531e77365b"
+      "sha256": "61ad5fa48cb28f7de647b5af7dd3ee39d77cba74e0d22d721a805af1123f8e1f"
     },
     {
       "path": "tools/rescore/select.py",
-      "sha256": "9450df2887a9a811f16bf538ed921c0d2cbb50c2e7e4f4a175e34867bfa639c5"
+      "sha256": "f86c4a9ee5b53591c3bd7516a30a2721459a9e5a66b01e155372860434a6b18f"
     },
     {
       "path": "tools/rescore/store.py",
@@ -481,11 +481,11 @@
     },
     {
       "path": "tools/rescore/window.py",
-      "sha256": "ae2bde8304f7bcd4775f84165f766266f9f798511185084367a1c69f89529857"
+      "sha256": "bc8d92bcb73dd7571d7c2f5b0e785011e2d1d0165bb05e1b8824f653dd4b76f1"
     },
     {
       "path": "tools/rescore/window_score.py",
-      "sha256": "6cecc3e82baa940c8372984164a63630307d8fe4ccd1aff72ff1fdaac0402568"
+      "sha256": "bd260e6ffd8dad4fe57050038b97c947bf748e7f13cc3adb5d69894358b92721"
     }
   ],
   "excluded": [
@@ -503,11 +503,13 @@
     "tools/experiments/rescore/analysis.py",
     "tools/experiments/rescore/byt5_segment_type.py",
     "tools/experiments/rescore/candidate_lambda.py",
+    "tools/experiments/rescore/correction_gallery.py",
     "tools/experiments/rescore/coverage.py",
     "tools/experiments/rescore/fig_decisions.py",
     "tools/experiments/rescore/figure_windows.py",
     "tools/experiments/rescore/fix_error_types.py",
     "tools/experiments/rescore/gap_wrong_keys.py",
+    "tools/experiments/rescore/greedy_eos_check.py",
     "tools/experiments/rescore/ilm_fixed.py",
     "tools/experiments/rescore/ilm_rows.py",
     "tools/experiments/rescore/independent_baselines.py",

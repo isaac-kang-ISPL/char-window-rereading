@@ -1,19 +1,24 @@
-"""글줄 띠 TR · rbox · W 창 영역(TRER · rbox 를 못 만들면 TRW1.5).
+"""Text-line base band TR · rbox · W window region (TRER; TRW1.5 when no rbox can be built).
 
-입력은 원본 RGB · 조각 분할 lab(`segment.cut`) · 글자 위치 p_tl · 글줄 곡선 tl_4(`position.derive`) · attention 기록 rec
-(키 text · maps · gw · gh · wh0 · rotated). 좌표는 모두 원본 그림의 px 이다.
+Inputs are the original RGB · the segmentation lab (`segment.cut`) · character points p_tl · the text-line curve tl_4
+(`position.derive`) · the attention record rec (keys text · maps · gw · gh · wh0 · rotated). All coordinates are px of
+the original image.
 
-    TR     = 글줄 곡선에서 cap-height ~ 기준선 사이 띠(잉크 확장 전 기본 띠). 이웃 조각 맞닿음 판정에 쓴다.
-    rbox   = 글자마다 p_tl 중심 · tl_4 접선 방향 사각형. 전경(Sauvola k 0.2 · 극성 = 띠 테두리 log 비 + attention log 비)
-             ∩ 넓힌 조각 S_i 에서 attention 몫 ≥ 0.2 인 덩어리의 외곽 → 떨어진 점 붙이기 → 여유.
-    TRER   = TR ∪ (TR 과 겹치는 rbox). W 창의 픽셀 범위다.
-    TRW1.5 = 글줄 중심 ± 1.5 x-height 띠. rbox 를 못 만든 장의 대체(한 글자 장은 글줄이 없어 그림 전체).
+    TR     = band between cap height and baseline along the text-line curve (base band before ink expansion).
+             Used to decide whether neighbouring segments touch.
+    rbox   = per character, a rectangle centred at p_tl and aligned with the tl_4 tangent. Foreground (Sauvola k 0.2 ·
+             polarity = band-border log ratio + attention log ratio) ∩ dilated segment S_i: outline of the components
+             with an attention share ≥ 0.2 → attach detached dots → margin.
+    TRER   = TR ∪ (rboxes that overlap TR). The pixel extent of a W window.
+    TRW1.5 = band of text-line centre ± 1.5 x-heights. Replacement for images where no rbox could be built
+             (a one-character image has no text line, so the whole image).
 
-공개 함수: tr_lines · strip_mask · tr_strip · wide_band · current_boxes · trer_region · window_region.
+Public functions: tr_lines · strip_mask · tr_strip · wide_band · current_boxes · trer_region · window_region.
 
-글줄 곡선점 솎기(`_spaced_indices`)는 같은 산술의 C++ 반복(`curve_spacing.cpp`)으로 돈다 — 처음 부를 때 segment 의 커널과 같은
-곳(`LEGIT_RESCORE_KERNEL_DIR`)에 g++ 로 빌드하고, 빌드나 적재가 안 되면 Python 반복으로 대신한다(같은 결과 · 느림 · `spacing_backend()`).
-`LEGIT_REGION_BACKEND=python` 이면 처음부터 Python, `=cpp` 면 커널이 없을 때 멈춘다.
+Text-line curve point thinning (`_spaced_indices`) runs as a C++ loop with the same arithmetic (`curve_spacing.cpp`). On
+the first call it is built with g++ in the same place as the segment kernel (`LEGIT_RESCORE_KERNEL_DIR`); if building or
+loading fails, a Python loop is used instead (same result · slower · `spacing_backend()`).
+With `LEGIT_REGION_BACKEND=python` Python is used from the start; with `=cpp` it stops when the kernel is unavailable.
 """
 from __future__ import annotations
 
@@ -33,32 +38,36 @@ from skimage.filters import threshold_sauvola
 from tools.rescore.position import (angles, common_min_maps, corner_prior_maps, grid_points, line,
                                     neighbor_competition_maps, px_maps)
 
-# 옛 경로가 이 계산을 불러 올 때 OpenCV 를 단일 스레드로 두었다(작은 연산이 많아 그쪽이 빠르다) — 같게 둔다.
+# The old path set OpenCV to a single thread when it called this computation (many small operations make that
+# faster) — keep it the same.
 cv2.setNumThreads(1)
 
-# ---------------------------------------------------------------- 상수
+# ---------------------------------------------------------------- constants
 
-CAP_OVER_XH = 1.333                 # cap-height ÷ x-height (합성 글꼴 여섯의 중앙값)
-BORDER_UP, BORDER_DN = 2.5, 1.5     # 글자 영역 위 · 아래 경계 — 기준선에서 x-height 배수(위 +2.5 · 아래 −1.5)
-EXPANDED_PAD = 0.5                  # 극성 판정용 확장 띠 — TR 을 법선 방향으로 x-height × 0.5 씩 넓힘
-SAUVOLA_K, SAUVOLA_R = .2, 127.5    # Sauvola 문턱(창 = x-height 1배 홀수)
-POL_FLOOR = 1e-3                    # 극성 점수의 전경률 하한
-VREACH = .8                         # 찾는 창의 세로 반폭 = VREACH × max(결정 지도 반높이, 간격/2)
-VSHIFT = .5                         # 찾는 창의 세로 중심을 글꼴 계량 (윗변+아랫변)/2 × 간격 × VSHIFT 만큼 옮김
-TAU = .2                            # 덩어리 고르기 문턱 — attention 질량 ÷ 전경 위 질량 합
-DIL = .05                           # 조각 S_i 를 넓히는 반지름 — p_tl 간격 × DIL
-DOT_CHARS, DOT_REACH = 'ij!?;:', .5  # 떨어진 점을 붙일 글자 · 상자 위(! ? 는 아래) x-height × DOT_REACH 안
-NO_CLIP = 99.                       # 가로 자르기 없음 — 찾는 창이 앞 · 뒤 p_tl 까지라 상자는 그 안에 머문다
-GEO_KU, GEO_KV = 1.2, .55           # 덩어리를 못 고른 자리의 기하 상자 — 이웃 p_tl 중점 × 1.2 · 결정 지도 반높이 × 0.55
-PAD_U, PAD_V, PAD_MIN_W = .10, .05, .5   # 상자 여유 — 가로 양옆 높이 × 0.10 · 세로 높이 × 0.05 · 폭 최소 높이 × 0.5
-RBOX_MASS = .9                      # 결정 지도 분위 상자가 담는 질량(반높이 추정용)
-TRW_HALF = 1.5                      # rbox 실패 장의 대체 띠 — 글줄 중심 ± 1.5 x-height
-RASTER_SHIFT = 8                    # rbox 다각형 래스터 정밀도 1/256 px
+CAP_OVER_XH = 1.333                 # cap height ÷ x-height (median of six synthetic fonts)
+BORDER_UP, BORDER_DN = 2.5, 1.5     # character region top · bottom borders — x-heights from the baseline (+2.5 · −1.5)
+EXPANDED_PAD = 0.5                  # expanded band for polarity — TR widened along the normal by x-height × 0.5 per side
+SAUVOLA_K, SAUVOLA_R = .2, 127.5    # Sauvola threshold (window = x-height × 1, odd)
+POL_FLOOR = 1e-3                    # lower bound of the foreground rate in the polarity score
+VREACH = .8                         # search window vertical half-width = VREACH × max(decision-map half-height, spacing/2)
+VSHIFT = .5                         # shift search window centre vertically by font metric (top+bottom)/2 × spacing × VSHIFT
+TAU = .2                            # component selection threshold — attention mass ÷ total mass on foreground
+DIL = .05                           # radius for dilating segment S_i — p_tl spacing × DIL
+# characters whose detached dot is attached · within x-height × DOT_REACH above the box (below for ! ?)
+DOT_CHARS, DOT_REACH = 'ij!?;:', .5
+NO_CLIP = 99.                       # no horizontal clip — the search window ends at the neighbouring p_tl, so the box stays in it
+# geometric box when no component is picked — neighbour p_tl midpoint × 1.2 · decision-map half-height × 0.55
+GEO_KU, GEO_KV = 1.2, .55
+# box margin — horizontal, each side height × 0.10 · vertical height × 0.05 · minimum width height × 0.5
+PAD_U, PAD_V, PAD_MIN_W = .10, .05, .5
+RBOX_MASS = .9                      # mass kept by the decision-map quantile box (for the half-height)
+TRW_HALF = 1.5                      # replacement band when rbox fails — text-line centre ± 1.5 x-height
+RASTER_SHIFT = 8                    # rbox polygon raster precision 1/256 px
 
 RBOX_VERSION = 'rbox-si-k0.2-dot-logsumpol-v6'
 PREPARATION = 'current-rbox-prepared-v1'
 
-# 글꼴 계량(글자별 윗변 · 아랫변)을 재는 글꼴 10개 — fc-match 로 찾는다.
+# The 10 fonts used for font metrics (per-character top · bottom) — found with fc-match.
 FONT_PATTERNS = ('DejaVu Sans:style=Book', 'DejaVu Sans:style=Bold',
                  'DejaVu Serif:style=Book', 'DejaVu Serif:style=Bold', 'DejaVu Sans Mono:style=Book',
                  'Liberation Sans:style=Regular', 'Liberation Sans:style=Bold',
@@ -66,7 +75,7 @@ FONT_PATTERNS = ('DejaVu Sans:style=Book', 'DejaVu Sans:style=Bold',
                  'Liberation Sans Narrow:style=Regular')
 
 
-# ---------------------------------------------------------------- 글줄 선 · 띠
+# ---------------------------------------------------------------- text lines · bands
 
 SPACING_SRC = Path(__file__).with_name('curve_spacing.cpp')
 _SPACING = None
@@ -74,7 +83,8 @@ _SPACING_BACKEND = None
 
 
 def _spacing_kernel():
-    """C++ 솎기 함수(처음 한 번 빌드 · 적재) — 못 쓰면 None 이고 그 까닭을 `_SPACING_BACKEND` 와 stderr 에 남긴다."""
+    """C++ thinning function (built · loaded once, on first use) — None if unavailable, with the reason left in
+    `_SPACING_BACKEND` and on stderr."""
     global _SPACING, _SPACING_BACKEND
     if _SPACING_BACKEND is not None:
         return _SPACING
@@ -95,7 +105,7 @@ def _spacing_kernel():
         fn.argtypes = [ctypes.c_void_p, ctypes.c_int64, ctypes.c_int64, ctypes.c_int64, ctypes.c_double, ctypes.c_double,
                        ctypes.c_void_p, ctypes.c_void_p]
         fn.restype = ctypes.c_int64
-    except Exception as e:                                         # 컴파일러 없음 · 빌드 실패 · 적재 실패
+    except Exception as e:                                         # no compiler · build failed · load failed
         if want == 'cpp':
             raise
         why = (getattr(e, 'stderr', None) or str(e)).strip().splitlines()
@@ -108,14 +118,16 @@ def _spacing_kernel():
 
 
 def spacing_backend() -> dict:
-    """곡선점 솎기에 쓰는 구현 — {'name': 'cpp' | 'python', 'reason', 'library'}."""
+    """Implementation used for curve point thinning — {'name': 'cpp' | 'python', 'reason', 'library'}."""
     _spacing_kernel()
     return dict(_SPACING_BACKEND)
 
 
 def _spaced_indices(points, threshold):
-    """점열에서 앞서 남긴 점과의 거리가 threshold 이상인 점만 남긴 번호(첫 점 포함) — C++ 반복, 못 쓰면 `_spaced_indices_py`.
-    경계 근처(|거리 − threshold| ≤ 1e-12·max(1, threshold))와 무한 거리는 numpy norm 으로 정하는 Python 규칙을 그대로 따른다."""
+    """Indices of the points kept from the sequence: a point is kept when its distance from the last kept point is
+    ≥ threshold (first point included) — C++ loop, or `_spaced_indices_py` when unavailable.
+    Near the boundary (|distance − threshold| ≤ 1e-12·max(1, threshold)) and for infinite distances it follows the
+    Python rule that decides with numpy norm."""
     fn = _spacing_kernel()
     if fn is None or len(points) < 2:
         return _spaced_indices_py(points, threshold)
@@ -157,24 +169,28 @@ def _spaced_indices_py(points, threshold):
 
 
 def _derive_lines(f_pts, s, up=BORDER_UP, down=BORDER_DN):
-    """글줄 곡선 점열과 x-height s 에서 여섯 선(기준선 · 글줄 · x-height · cap-height · 위 · 아래 경계).
+    """Six lines from the text-line curve points and x-height s (baseline · text line · x-height · cap height · upper ·
+    lower border).
 
-    미는 양은 기준선 기준 x-height 배수(위가 +)이고 글줄 법선 방향으로 민다. 법선은 읽기 방향을 따른다.
+    Shifts are multiples of x-height from the baseline (up is +), applied along the text-line normal. The normal follows
+    the reading direction.
     """
     return {k: v.tolist() for k, v in _line_arrays(f_pts, s, up, down).items()}
 
 
 def _line_arrays(f_pts, s, up=BORDER_UP, down=BORDER_DN, keys=None):
-    """`_derive_lines` 의 선들을 float 배열 (n, 2) 로 — 값은 같다(소수 셋째 자리 반올림 · 짧은 점열은 반올림 없음).
-    keys 를 주면 그 선만 계산한다(띠 둘은 위 · 아래 경계와 cap-height · 기준선만 쓴다)."""
+    """The lines of `_derive_lines` as float arrays (n, 2) — same values (rounded to three decimals · short point
+    sequences are not rounded).
+    If keys is given, only those lines are computed (the two bands use only the upper · lower borders and cap height ·
+    baseline)."""
     up_ = {'baseline': 0.0, 'textline': 0.5, 'xheight': 1.0,
            'capheight': CAP_OVER_XH,
            'bordup': up, 'borddn': -down}
-    off = {k: 0.5 - v for k, v in up_.items() if keys is None or k in keys}   # 글줄 기준 · 화면 좌표
+    off = {k: 0.5 - v for k, v in up_.items() if keys is None or k in keys}   # from the text line · screen coords
     P = np.asarray(f_pts, float)
     if len(P) < 2:
         return {k: np.asarray([[float(x), float(y + v * s)] for x, y in f_pts], float).reshape(-1, 2) for k, v in off.items()}
-    # 점열을 max(s/4, 0.5px) 간격으로 솎은 뒤 접선을 잰다(촘촘한 점열의 반올림 지터 방지).
+    # Thin the points to max(s/4, 0.5px) spacing, then measure tangents (avoids rounding jitter of dense points).
     step_ = max(float(s) * 0.25, 0.5)
     keep = _spaced_indices(P, step_)
     if keep[-1] != len(P) - 1:
@@ -184,7 +200,7 @@ def _line_arrays(f_pts, s, up=BORDER_UP, down=BORDER_DN, keys=None):
         P = np.asarray(f_pts, float)[[0, -1]]
     tg = np.gradient(P, axis=0)
     nrm = np.linalg.norm(tg, axis=1, keepdims=True)
-    # 겹친 점(기울기 0)은 전체 방향으로 메운다.
+    # Fill coincident points (zero gradient) with the overall direction.
     dead = (nrm[:, 0] < 1e-6)
     if dead.any():
         g = P[-1] - P[0]
@@ -198,13 +214,14 @@ def _line_arrays(f_pts, s, up=BORDER_UP, down=BORDER_DN, keys=None):
 
 
 def tr_lines(geometry):
-    """tl_4 곡선 표본에서 여섯 선 — 크기는 geometry['size'](x-height)."""
+    """Six lines from the tl_4 curve samples — scale is geometry['size'] (x-height)."""
     size = float(geometry.get('size', 0) or 0)
     return _derive_lines(line(geometry), size)
 
 
 def strip_mask(lines, shape):
-    """cap-height 선과 기준선 사이 띠를 이웃 삼각형 합집합으로 래스터(1/256 px) — 그림 밖은 잘림."""
+    """Rasterize the band between the cap-height line and the baseline as a union of adjacent triangles (1/256 px) —
+    clipped outside the image."""
     cap = np.asarray(lines['capheight'], float)
     base = np.asarray(lines['baseline'], float)
     assert cap.shape == base.shape and cap.ndim == 2 and cap.shape[1] == 2
@@ -224,7 +241,7 @@ def strip_mask(lines, shape):
 
 
 def tr_strip(shape, geometry):
-    """기본 띠 TR(cap-height ~ 기준선) — 글줄 곡선이 없으면 그림 전체."""
+    """Base band TR (cap height to baseline) — the whole image if there is no text-line curve."""
     size = float(geometry.get('size', 0))
     if geometry.get('samples', 0) < 2 or size <= 0:
         return np.ones(shape, bool)
@@ -232,7 +249,7 @@ def tr_strip(shape, geometry):
 
 
 def wide_band(shape, geometry, half=TRW_HALF):
-    """글줄 중심(기준선 +0.5) ± half x-height 띠 — 글줄 곡선이 없으면 그림 전체."""
+    """Band of text-line centre (baseline +0.5) ± half x-heights — the whole image if there is no text-line curve."""
     size = float(geometry.get('size', 0))
     if geometry.get('samples', 0) < 2 or size <= 0:
         return np.ones(shape, bool)
@@ -252,10 +269,11 @@ def wide_and_tr_bands(shape, geometry, half=TRW_HALF):
     return wide, strip_mask(lines, shape)
 
 
-# ---------------------------------------------------------------- 전경 · 극성
+# ---------------------------------------------------------------- foreground · polarity
 
 def _normalized_gray(rgb, reference_mask):
-    """TR 안 명도 최소 · 최대로 그림 전체를 min-max 정규화한 회색조(띠가 비거나 평평하면 그대로)."""
+    """Grayscale of the whole image, min-max normalized by the minimum · maximum intensity inside TR (unchanged if the
+    band is empty or flat)."""
     gray = cv2.cvtColor(np.asarray(rgb, np.uint8), cv2.COLOR_RGB2GRAY)
     reference_mask = np.asarray(reference_mask, bool)
     if reference_mask.shape != gray.shape:
@@ -270,7 +288,7 @@ def _normalized_gray(rgb, reference_mask):
 
 
 def _sauvola_positive(gray, xheight, ink_high):
-    """Sauvola(창 = x-height 1배 홀수 · k 0.2) 전경 — ink_high 면 밝은 글자(255 − 명도)."""
+    """Sauvola foreground (window = x-height × 1, odd · k 0.2) — if ink_high, light characters (255 − intensity)."""
     size = max(3, int(round(float(xheight) * 1)) | 1)
     source = 255 - gray if ink_high else gray
     threshold = threshold_sauvola(source, window_size=size, k=SAUVOLA_K, r=SAUVOLA_R)
@@ -278,7 +296,8 @@ def _sauvola_positive(gray, xheight, ink_high):
 
 
 def _full_image_ink_high(dark, light, shape):
-    """그림 테두리 전경이 적은 쪽이 글자(같으면 전체 전경이 적은 쪽 · 그다음 어두운 글자)."""
+    """The side with less foreground on the image border is the character (on a tie, less total foreground · then dark
+    characters)."""
     mask = np.ones(shape, bool)
     boundary = mask & ~cv2.erode(mask.astype(np.uint8),
         cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3)),
@@ -293,7 +312,7 @@ def _full_image_ink_high(dark, light, shape):
 
 
 def _expanded_band(lines, size, shape):
-    """극성 판정용 확장 띠와 그 테두리(두 곡선 · 띠 안 그림 테두리)."""
+    """Expanded band for polarity and its border (the two curves · image border inside the band)."""
     cap = np.asarray(lines['capheight'], float)
     base = np.asarray(lines['baseline'], float)
     if (cap.shape != base.shape or cap.ndim != 2 or cap.shape[1] != 2
@@ -323,7 +342,8 @@ def _expanded_band(lines, size, shape):
 
 
 def _band_ink_high(dark, light, region, boundary, shape):
-    """확장 띠 테두리 전경이 적은 쪽이 글자(같으면 띠 전경 · 그다음 어두운 글자). 테두리가 없으면 그림 테두리 판정."""
+    """The side with less foreground on the expanded-band border is the character (on a tie, band foreground · then dark
+    characters). Without a border, the image-border rule."""
     full = _full_image_ink_high(dark, light, shape)
     if not int(boundary.sum()):
         return full
@@ -337,10 +357,11 @@ def _band_ink_high(dark, light, region, boundary, shape):
 
 
 def _logsum_polarity(dark, light, edge, mp):
-    """극성 점수 band + attn(> 0 이면 어두운 글자).
+    """Polarity score band + attn (> 0 means dark characters).
 
-    attention 마스크 = 자리별 지도를 자기 최대로 나눈 뒤 화소별 최대 → 0–255 Otsu.
-    attn = ln(dark 안/밖) − ln(light 안/밖) · band = ln(light 띠 테두리 전경률) − ln(dark 띠 테두리 전경률).
+    Attention mask = per-position maps divided by their own maximum, then the per-pixel maximum → Otsu on 0–255.
+    attn = ln(dark inside/outside) − ln(light inside/outside) ·
+    band = ln(light band-border foreground rate) − ln(dark band-border foreground rate).
     """
     mp = np.asarray(mp, float)
     amap = (mp / np.maximum(mp.reshape(len(mp), -1).max(1), 1e-12)[:, None, None]).max(0)
@@ -354,7 +375,7 @@ def _logsum_polarity(dark, light, edge, mp):
 
 
 def _foreground(rec, rgb, points, geometry, source_lab):
-    """장 하나의 전경과 조각 분할(모델 입력 방향) — 글줄이 없으면 None."""
+    """Foreground and segmentation of one image (model input orientation) — None if there is no text line."""
     size = float(geometry.get('size', 0) or 0)
     if len(points) < 2 or geometry.get('samples', 0) < 2 or size <= 0:
         return None
@@ -377,7 +398,7 @@ def _foreground(rec, rgb, points, geometry, source_lab):
                 ink_high=ink_high, polarity='logsum', size=size)
 
 
-# ---------------------------------------------------------------- 글꼴 계량
+# ---------------------------------------------------------------- font metrics
 
 def _font_paths():
     paths = []
@@ -398,9 +419,11 @@ FONT_TABLE = Path(__file__).resolve().parent / 'data' / 'font_metrics.json'
 
 
 def font_metrics():
-    """94자 × 글꼴 10개 평균 — x-height 단위로 (잉크 폭 · x-height 가운데 위 윗변 · 아랫변(위 +) · 가로 중심 어긋남).
-    원고 회차 환경(openocr · PIL · 글꼴 파일 sha256 은 표에 기록)에서 잰 값을 굳힌 표 `data/font_metrics.json` 을 읽는다 —
-    글꼴 · PIL 판이 다른 기계에서도 같은 값을 쓰게. 표를 다시 재려면 `measure_font_metrics()`."""
+    """Mean over 94 characters × 10 fonts — in x-height units (ink width · top · bottom above the x-height middle (up +) ·
+    horizontal centre offset).
+    Reads `data/font_metrics.json`, a frozen table of values measured in the manuscript run environment (openocr · PIL ·
+    font file sha256 recorded in the table) — so machines with different font · PIL versions use the same values.
+    To re-measure the table, `measure_font_metrics()`."""
     if not _FONT:
         import json
         for c, v in json.loads(FONT_TABLE.read_text())['metrics'].items():
@@ -409,7 +432,8 @@ def font_metrics():
 
 
 def measure_font_metrics():
-    """font_metrics 표를 이 기계의 글꼴로 다시 잰다(fc-match · 200 px 렌더링) — 표를 새로 만들 때만."""
+    """Re-measure the font_metrics table with this machine's fonts (fc-match · 200 px rendering) — only when building a
+    new table."""
     from PIL import Image, ImageDraw, ImageFont
     out = {}
     chars = [chr(c) for c in range(33, 127)]
@@ -432,7 +456,7 @@ def measure_font_metrics():
     return out
 
 
-# ---------------------------------------------------------------- 자리 틀 · 찾는 창
+# ---------------------------------------------------------------- position frame · search window
 
 def _axes(a):
     t = np.stack([np.cos(a), np.sin(a)], -1)
@@ -446,7 +470,8 @@ def _proj(r, i, pts):
 
 
 def _neighbor_gaps(r, i):
-    """접선 위 앞 · 뒤 p_tl 까지 거리(양수). 없으면 다른 쪽 · 둘 다 없으면 간격 중앙값."""
+    """Distances along the tangent to the previous · next p_tl (positive). If one is missing, the other · if both are
+    missing, the median spacing."""
     n = len(r['ptl'])
     prev = -_proj(r, i, r['ptl'][i - 1][None])[0][0] if i > 0 else None
     nxt = _proj(r, i, r['ptl'][i + 1][None])[0][0] if i + 1 < n else None
@@ -458,14 +483,16 @@ def _neighbor_gaps(r, i):
 
 
 def _geometric(r, i):
-    """기하 상자 — 가로 앞 · 뒤 p_tl 중점까지 × 1.2 · 세로 결정 지도 반높이 × 0.55."""
+    """Geometric box — horizontally to the previous · next p_tl midpoint × 1.2 · vertically decision-map half-height ×
+    0.55."""
     gp, gn = _neighbor_gaps(r, i)
     hv = GEO_KV * r['radii'][i][1]
     return np.array([-GEO_KU * gp / 2, GEO_KU * gn / 2, -hv, hv])
 
 
 def _margin(b):
-    """빈틈없는 상자에 여유 — 가로 양옆 높이 × 0.10 · 세로 높이 × 0.05 · 폭이 높이 × 0.5 보다 좁으면 넓힘."""
+    """Add a margin to a tight box — horizontally each side height × 0.10 · vertically height × 0.05 · widened if the width
+    is below height × 0.5."""
     u0, u1, v0, v1 = b
     H = v1 - v0
     u0, u1, v0, v1 = u0 - PAD_U * H, u1 + PAD_U * H, v0 - PAD_V * H, v1 + PAD_V * H
@@ -475,8 +502,9 @@ def _margin(b):
 
 
 def _search_window(r, i, vreach=VREACH, a=VSHIFT, reach=1.):
-    """자리 i 의 찾는 창 — 가로 앞 · 뒤 p_tl 까지 · 세로 ±vreach·max(ry, 간격/2) · 중심은 글꼴 계량 × a 만큼 옮김.
-    창 화소는 p_tl 간격 48 화소 밀도(최소 1 배). 결정 지도는 격자 → 화소 쌍선형."""
+    """Search window of position i — horizontally to the previous · next p_tl · vertically ±vreach·max(ry, spacing/2) ·
+    centre shifted by font metric × a.
+    Window pixel density is 48 pixels per p_tl spacing (at least 1×). The decision map is bilinear from grid to pixels."""
     gp, gn = _neighbor_gaps(r, i)
     hv = vreach * max(r['radii'][i][1], .5 * r['spacing'])
     cv = 0.
@@ -506,7 +534,8 @@ def _components(fg):
 
 
 def _pick(Wd, fg, tau=TAU):
-    """전경 덩어리 중 attention 질량 ÷ 전경 위 질량 합 ≥ tau(넓이 3 이상) — 고른 화소 mask 또는 None."""
+    """Foreground components with attention mass ÷ total mass on the foreground ≥ tau (area 3 or more) — mask of the
+    selected pixels or None."""
     n, lab, st = _components(fg)
     A = Wd['dec'] * Wd['ins']
     mass = np.bincount(lab.ravel(), weights=(A * fg).ravel(), minlength=n)
@@ -532,8 +561,9 @@ def _bbox(Wd, m, clip=NO_CLIP):
 
 
 def _tight_box(r, i, parts):
-    """자리 i 의 빈틈없는 상자 [u0, u1, v0, v1](자리 틀) — 못 고르면 None.
-    AR 글자가 i · j · ! · ? · ; · : 이면 고른 상자의 가로 범위 안 · 상자 위(! ? 는 아래) 떨어진 점 덩어리를 더한다."""
+    """Tight box [u0, u1, v0, v1] of position i (position frame) — None if nothing is selected.
+    If the AR character is i · j · ! · ? · ; · :, add detached dot components within the horizontal extent of the
+    selected box and above it (below for ! ?)."""
     Wd = _search_window(r, i)
     fg = (map_coordinates(parts['fg32'], [Wd['Y'], Wd['X']], order=0, mode='constant', cval=0) > .5) & Wd['ins']
     Sw = (map_coordinates(parts['lab32'], [Wd['Y'], Wd['X']], order=0, mode='constant', cval=-1) == i) & Wd['ins']
@@ -556,13 +586,14 @@ def _tight_box(r, i, parts):
 
 
 def _quantile(values, weights, q):
-    """가중 역누적분포(칸 질량 그대로 · 보간 없음)."""
+    """Weighted inverse CDF (cell mass as is · no interpolation)."""
     order = np.argsort(values, kind='stable')
     return float(values[order[min(int(np.searchsorted(np.cumsum(weights[order]), q, side='left')), len(order)-1)]])
 
 
 def _decision_radii(mass, xy, wh, angle, cell_size, keep=RBOX_MASS):
-    """결정 지도 칸을 접선 · 법선에 투영한 분위 상자(꼬리마다 (1−keep)/4 · 반쪽 칸 덧댐)의 반폭 · 반높이."""
+    """Half-width · half-height of the quantile box of decision-map cells projected onto the tangent · normal
+    ((1−keep)/4 per tail · half-cell padding)."""
     p = np.asarray(mass, float)
     if not len(p) or np.any(p < 0) or not np.isfinite(p).all() or p.sum() <= 0:
         raise ValueError('Invalid decision map')
@@ -579,12 +610,12 @@ def _decision_radii(mass, xy, wh, angle, cell_size, keep=RBOX_MASS):
     return [(b-a)/2, (d-c)/2]
 
 
-# ---------------------------------------------------------------- rbox · 창 영역
+# ---------------------------------------------------------------- rbox · window region
 
 def current_boxes(rgb, lab, points, geometry, rec):
-    """글자마다 rbox 네 모서리(원본 px) — (모서리 목록, meta). 못 만들면 ValueError.
+    """Four rbox corners per character (original px) — (corner list, meta). ValueError if they cannot be built.
 
-    rgb (H, W, 3) uint8 · lab 조각 분할(H, W) · points 글자 위치 p_tl K 개 · geometry tl_4 · rec attention 기록.
+    rgb (H, W, 3) uint8 · lab segmentation (H, W) · points K character points p_tl · geometry tl_4 · rec attention record.
     """
     rgb, lab = np.asarray(rgb, np.uint8), np.asarray(lab)
     pts = np.asarray(points, float).reshape(-1, 2)
@@ -629,7 +660,8 @@ def current_boxes(rgb, lab, points, geometry, rec):
 
 
 def trer_region(shape, geometry, boxes):
-    """TRER = TR ∪ (TR 과 겹치는 rbox) — rbox 는 볼록 다각형 1/256 px 래스터. boxes 가 비었거나 목록이 아니면 None."""
+    """TRER = TR ∪ (rboxes that overlap TR) — each rbox is rasterized as a convex polygon at 1/256 px. None if boxes is
+    empty or not a list."""
     if not isinstance(boxes, list) or not boxes:
         return None
     base = tr_strip(shape, geometry); region = base.copy(); hit = 0
@@ -642,23 +674,26 @@ def trer_region(shape, geometry, boxes):
 
 
 def rbox_or_reason(rgb, lab, points, geometry, rec):
-    """rbox 모서리 목록(list of [[x, y]×4]) 또는 실패 사유 문자열 — 미리 계산 pickle 값과 같은 모양."""
+    """List of rbox corners (list of [[x, y]×4]) or a failure reason string — same shape as the precomputed pickle
+    values."""
     if rec is None:
         return 'missing_attention_record'
     try:
         boxes, _ = current_boxes(rgb, lab, points, geometry, rec)
         return [np.asarray(b, float).tolist() for b in boxes]
-    except ImportError:                                # 모듈이 없으면 장마다 조용히 TRW1.5 로 떨어지지 않게 멈춘다
+    except ImportError:                                # missing module: stop, not a silent TRW1.5 per image
         raise
     except Exception as e:
         return f'{type(e).__name__}: {e}'
 
 
 def window_region(rgb, lab, points, geometry, rec, *, boxes=None, fallback='trw15'):
-    """W 창 영역 — (영역 bool (H, W), meta). TRER, rbox 를 못 만든 장은 TRW1.5(한 글자 장은 그림 전체).
+    """W window region — (region bool (H, W), meta). TRER; images where no rbox could be built get TRW1.5
+    (a one-character image gets the whole image).
 
-    boxes 는 옛 미리 계산 pickle 값과 같은 뜻이다 — None 이면 current_boxes 로 그 자리에서 계산(예외면 실패) ·
-    비어 있지 않은 list 면 그 rbox 로 TRER · 그 밖의 값(실패 사유 문자열 · 빈 list)은 계산 없이 rbox 실패로 TRW1.5.
+    boxes has the same meaning as the old precomputed pickle values — None computes them on the spot with current_boxes
+    (an exception means failure) · a non-empty list gives TRER from those rboxes · any other value (failure reason
+    string · empty list) is an rbox failure and gives TRW1.5 without computing.
     """
     if fallback != 'trw15':
         raise ValueError("fallback must be 'trw15'")

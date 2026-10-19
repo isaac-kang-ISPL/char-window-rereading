@@ -11,8 +11,5 @@ lmdb
 pyyaml
 torch
 transformers
-# manuscript experiments only
-scikit-learn==1.6.1     # learned rerankers of the selection-gap table (the stored result used 1.6.1)
-rapidfuzz
 # tests (tests/test_rescore_core.py)
 pytest

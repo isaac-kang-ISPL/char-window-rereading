@@ -141,6 +141,17 @@ def preload():
     C.window_delta('trwnn_full', full)
 
 
+# Stages whose stored inputs are in the published data archive (Tables 2, 3 and 7, the recorded files). A release — no
+# research_layout.json, so the data root is the unpacked archive — runs and lists only these; the other stages need
+# inputs of the research tree and are listed as "data not included".
+ARCHIVE_STAGES = ('ar_main', 'ar_abl', 'condition', 'recorded')
+
+
+def _available():
+    from tools.rescore import store
+    return [s for s in STAGES if store.LAYOUT or s[0] in ARCHIVE_STAGES]
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--out', type=Path, help='output root (LEGIT_RESCORE_OUT)')
@@ -157,8 +168,11 @@ def main():
         os.execve(sys.executable, [sys.executable, '-m', 'tools.experiments.rescore.reproduce'] + sys.argv[1:],
                   {**os.environ, **PORTABLE})                     # numpy fixes its SIMD paths at import — restart with them set
     if a.list:
+        avail = {s[0] for s in _available()}
         for name, target, env, deps, res in STAGES:
-            print(f'{name:14s} {target:30s} {env} deps={list(deps)} → {res if isinstance(res, str) else (f"{len(res)} files" if res else "(part)")}')
+            what = res if isinstance(res, str) else (f"{len(res)} files" if res else "(part)")
+            print(f'{name:14s} {target:30s} {env} deps={list(deps)} → {what}' if name in avail else
+                  f'{name:14s} (data not included in the archive)')
         return 0
     if a.out:
         os.environ['LEGIT_RESCORE_OUT'] = str(a.out.resolve())
@@ -175,9 +189,13 @@ def main():
     unknown = sorted(set(filter(None, a.only.split(','))) - set(BY))
     if unknown:
         raise SystemExit(f'unknown stages {unknown} (see --list)')
+    avail = [s[0] for s in _available()]
+    missing = sorted(set(filter(None, a.only.split(','))) - set(avail))
+    if missing:
+        raise SystemExit(f'stages {missing}: their inputs are not in the data archive (see --list)')
     if not a.out and not a.no_compare:
         raise SystemExit('give --out: the results would be written into the data root (and compared with themselves)')
-    todo = _ordered([s[0] for s in STAGES if not a.only or s[0] in a.only.split(',')])
+    todo = _ordered([n for n in avail if not a.only or n in a.only.split(',')])
     if not a.only:
         os.environ['LEGIT_RESCORE_STRICT'] = '1'        # a full run reads earlier results only from its own output root
     print(f'data root {store.DATA} · output root {os.environ.get("LEGIT_RESCORE_OUT", store.DATA)} · Python {sys.version.split()[0]} · '
