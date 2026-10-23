@@ -141,10 +141,11 @@ def preload():
     C.window_delta('trwnn_full', full)
 
 
-# Stages whose stored inputs are in the published data archive (Tables 2, 3 and 7, the recorded files). A release — no
+# Stages whose stored inputs are in the published data archive (the SVTRv2-AR accuracy values of the main table, of the
+# comparison with published methods and of the image-conditioned table: `paper_tables`; the recorded files). A release — no
 # research_layout.json, so the data root is the unpacked archive — runs and lists only these; the other stages need
 # inputs of the research tree and are listed as "data not included".
-ARCHIVE_STAGES = ('ar_main', 'ar_abl', 'condition', 'recorded')
+ARCHIVE_STAGES = ('table_main', 'table_condition', 'recorded')
 
 
 def _available():

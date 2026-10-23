@@ -59,10 +59,12 @@ RECORDED = {
          'published_sota.py'),
     'recorded/validation_set.meta.json':
         (('d12be3eb703d9d0abca9b23ed508d8c0ae74d525c85a9bb5880d4334ffc399ef',),
-         'definition of the validation set (Union14M-L-val, seed 20260920, 10,000 images)', None),
+         'definition of the original 10,000-image validation pool (Union14M-L-val, seed 20260920); the validation set of '
+         'the manuscript replaces 27 of its images (benchmarks/validation-set.json)', None),
     'recorded/validation_set.tsv':
         (('ab55bdbde7b8e67f3ecd6491e091d5608aa7de1b6ac2c1238baa4e39a2540923',),
-         'the 10,000 validation images (dataset, index, label): of the Union14M-L-val images with a label of 1 to 25 printable '
+         'the original 10,000-image validation pool (dataset, index, label; benchmarks/validation-set.json replaces 27 of '
+         'them): of the Union14M-L-val images with a label of 1 to 25 printable '
          'ASCII characters (398,228), the first 10,000 in the order of SHA-256("20260920|<dataset>#<index>")', None),
 }
 

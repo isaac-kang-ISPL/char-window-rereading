@@ -222,6 +222,44 @@ def _complete(d):
     return any(len({int(x.group(1)) for x in marks if x and int(x.group(2)) == n}) == n for n in ns)
 
 
+# ---------------------------------------------------------------- the validation set (natdev10k_v2 switch)
+
+NATDEV_V2_DEFAULT = Path(__file__).resolve().parents[2] / 'materials/api/natdev_replace27/natdev10k_v2_keys.json'
+NATDEV_V2_PUBLIC = 'benchmarks/validation-set.json'             # the same key list in the published data archive
+
+
+def natdev_v2():
+    """The validation set 'natdev' (default natdev10k_v2, user decision 2026-10-22: natdev10k without the 27 images identical
+    to UB General plus ranks 50,001-50,027 of the same order), or None for the original natdev10k. LEGIT_NATDEV_V2 = a JSON
+    file with 'keys' (the validation images, in order) and 'extra_split' (the split name under which the stores hold the images
+    that natdev10k lacks, in the natdev layout); LEGIT_NATDEV_V2=0 selects the original natdev10k. Without the research tree's
+    key list (a release) the key list of the data root is read (NATDEV_V2_PUBLIC), and without either the original split."""
+    default = NATDEV_V2_DEFAULT if NATDEV_V2_DEFAULT.exists() else at(NATDEV_V2_PUBLIC)
+    f = os.environ.get('LEGIT_NATDEV_V2', str(default) if default.exists() else '0')
+    if f in ('', '0', 'natdev10k'):
+        return None
+    d = json.loads(Path(f).read_text())
+    return dict(keys=tuple(d['keys']), added=frozenset(d.get('added', ())), extra=d['extra_split'],
+                name=d.get('name', Path(f).stem))
+
+
+def _v2(split, base, extra, sparse=False):
+    """natdev under LEGIT_NATDEV_V2: natdev and the extra split merged, restricted to the listed keys in their order.
+    A listed image without input stops the run — a selection never runs on fewer images than the definition. sparse: a store
+    that lacks some natdev10k images by construction (own windows: 2 images of TRBA and of SVTRv2-CTC); there only an added
+    image without input stops the run, and a natdev10k image keeps the absence it had."""
+    v = natdev_v2() if split == 'natdev' else None
+    if v is None:
+        return base
+    d = dict(base)
+    d.update(extra(v['extra']))
+    miss = [k for k in v['keys'] if k not in d and (not sparse or k in v['added'])]
+    if miss:
+        raise SystemExit(f"validation set {v['name']}: {len(miss)} validation images without input in this store "
+                         f"(split {v['extra']} missing or incomplete), e.g. {miss[:3]}; LEGIT_NATDEV_V2=0 reads the original natdev10k")
+    return {k: d[k] for k in v['keys'] if k in d}
+
+
 # ---------------------------------------------------------------- images and labels
 
 def labels(split):
@@ -229,7 +267,8 @@ def labels(split):
     if split == 'full':
         return {r['key']: r['gt'] for r in _json(FULL_ROWS)}
     if split == 'natdev':
-        return {k: v['gt'] for k, v in _json(BEAMS / 'natdev_cands.json').items()}
+        return _v2(split, {k: v['gt'] for k, v in _json(BEAMS / 'natdev_cands.json').items()},
+                   lambda x: {k: v['gt'] for k, v in _json(BEAMS / f'{x}_cands.json').items()})
     if split == 'newsets':
         return {k: c['gt'] for k, c in _json(NEWSETS / 'cands.json').items()}
     raise ValueError(split)
@@ -246,7 +285,7 @@ def ar_beams(split):
     """SVTRv2-AR beam lists — {key: {'ar': greedy a, 'gt', 'ar_lp'?: log P of a, 'cands': [{'y', 'ar': log P, 'nb': rank}]}}."""
     f = {'natdev': BEAMS / 'natdev_cands.json', 'full': BEAMS / 'arnb_cands_full.json.gz',
          'newsets': NEWSETS / 'cands.json'}[split]
-    return cached(f'ar_beams_{split}', [f], [], lambda: _json(f))
+    return _v2(split, cached(f'ar_beams_{split}', [f], [], lambda: _json(f)), lambda x: _json(BEAMS / f'{x}_cands.json'))
 
 
 def ctc_beams(split, fix=True):
@@ -264,7 +303,7 @@ def ctc_beams(split, fix=True):
                 if k in B:
                     B[k] = dict(greedy=v['greedy'], beam=v['beam'])
         return B
-    return cached(f'ctc_beams_{split}', files, [use_fix], build)
+    return _v2(split, cached(f'ctc_beams_{split}', files, [use_fix], build), lambda x: ctc_beams(x, fix))
 
 
 def other_beams(m, split):
@@ -274,7 +313,7 @@ def other_beams(m, split):
     else:
         d = OTHER / ((m if split == 'full' else f'{m}_{split}') + '_b20t20')
     files = _need(sorted(d.glob('*.json')), f'{m} beam lists ({split})', d)
-    return cached(f'beams_{m}_{split}', files, [], lambda: _merge_json_dir(d, skip=None))
+    return _v2(split, cached(f'beams_{m}_{split}', files, [], lambda: _merge_json_dir(d, skip=None)), lambda x: other_beams(m, x))
 
 
 def beam_files(m, split):
@@ -326,7 +365,14 @@ def pll_table(model='byt5-xl', field='ci', strings_file='strings.json'):
             for t, v in _string_table(fm, json.loads((more / 'strings.json').read_text()), field):
                 tab.setdefault(t, v)
         return tab
-    return cached(f'pll_{model}_{field}', files, [model, field, strings_file], build)
+    tab = cached(f'pll_{model}_{field}', files, [model, field, strings_file], build)
+    v = natdev_v2()
+    add = PLL / f"{model}_{v['extra']}_{field}.json" if v else None
+    if add is not None and add.exists():
+        tab = dict(tab)
+        for t, x in json.loads(add.read_text()).items():
+            tab.setdefault(t, x)
+    return tab
 
 
 def pll_folder(d, field='ci'):
@@ -357,7 +403,23 @@ def ilm_table(m):
     return cached(f'ilm_{m}', files, [m], build)
 
 
+def natdev_merge(split, load):
+    """load(split) of a per-image store; under LEGIT_NATDEV_V2 natdev also reads load(<extra split>) and keeps the listed keys
+    (the hook of the scripts whose stores are not read through this module)."""
+    return _v2(split, load(split), load)
+
+
 def window_table(tag):
+    """window_table_ of the tag; under LEGIT_NATDEV_V2 a tag with the segment 'natdev' (trwnn_natdev, wf2_mwargmax_natdev_b10t10tf32,
+    ...) also reads the same tag with the extra split in that place."""
+    parts = tag.split('_')
+    if 'natdev' in parts and natdev_v2():
+        alt = lambda x: window_table_('_'.join(x if s == 'natdev' else s for s in parts))
+        return _v2('natdev', window_table_(tag), alt)
+    return window_table_(tag)
+
+
+def window_table_(tag):
     """{key: {hypothesis: window score}} of SVTRv2-AR — absolute scores, the greedy transcript a included.
     `<tag>` first, then `<tag>_gfix` (hypotheses added when the evaluation candidates took the validation rule; fills
     only missing hypotheses), then `<tag>_afix` (images whose windows were rebuilt from a; replaces the image)."""
@@ -388,15 +450,20 @@ def _merge_files(files):
 def own_window_table(m, split, tag=None):
     """Windows of recognizer m built from its own attention and read by itself — {key: {hypothesis: ΔW against a}}.
     `<split>_<tag>` (+ `_same`: hypotheses that read like a; + `_usual`: images whose windows were rebuilt from the usual
-    output, replacing the image). None until every shard of the main run is done."""
+    output, replacing the image; + `_refine` · `_refine_usual`: hypotheses outside the beam strings, the refinement outputs of
+    PARSeq and MDiff4STR, added to the image's table). None until every shard of the main run is done."""
     tag = tag or os.environ.get('OWN_TAG', 'owntrwnn')
     base = OWN_WINDOWS / READER_DIR[m]
     main, same, usual = base / f'{split}_{tag}', base / f'{split}_{tag}_same', base / f'{split}_{tag}_usual'
+    refine, refine_usual = base / f'{split}_{tag}_refine', base / f'{split}_{tag}_refine_usual'
     if not _complete(main):
         return None
     use_same = _complete(same)
     use_usual = os.environ.get('LEGIT_OWN_USUAL', '1') != '0' and usual.exists()
-    files = [f for d, on in ((main, True), (same, use_same), (usual, use_usual)) if on
+    use_refine = os.environ.get('LEGIT_OWN_REFINE', '1') != '0' and _complete(refine)
+    use_refine_usual = use_refine and use_usual and refine_usual.exists()
+    files = [f for d, on in ((main, True), (same, use_same), (usual, use_usual), (refine, use_refine),
+                             (refine_usual, use_refine_usual)) if on
              for f in sorted(d.glob('*.json')) if '_limit' not in f.name]
 
     def build():
@@ -410,8 +477,18 @@ def own_window_table(m, split, tag=None):
         if use_usual:
             for k, d in _merge_files(sorted(usual.glob('*.json'))):
                 W[k] = dict(d)
+        for d_ in (refine, refine_usual) if use_refine else ():
+            if d_ is refine_usual and not use_refine_usual:
+                continue
+            for k, d in _merge_files(sorted(d_.glob('*.json'))):
+                w = W.setdefault(k, {})
+                for y, v in d.items():
+                    if w.get(y) is None:                          # absent, or stored without a value by the beam-string run
+                        w[y] = v
         return W
-    return cached(f'own_{m}_{split}_{tag}', files, [m, split, tag, use_same, use_usual], build)
+    key = [m, split, tag, use_same, use_usual] + ([use_refine, use_refine_usual] if use_refine else [])
+    out = cached(f'own_{m}_{split}_{tag}', files, key, build)
+    return out if out is None else _v2(split, out, lambda x: own_window_table(m, x, tag) or {}, sparse=True)
 
 
 def window_files(tag):

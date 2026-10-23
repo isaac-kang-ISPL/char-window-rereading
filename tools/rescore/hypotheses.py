@@ -112,6 +112,8 @@ def items(m, split, k=None):
     """Items of recognizer m on a split ('natdev', 'full', 'newsets') — kept in the disk cache by their input files."""
     k = K if k is None else k
     env = [os.environ.get('CTC_GREEDY_FIX', '1')]
+    if split == 'natdev' and store.natdev_v2():               # redefined validation set: built from the merged lists, not cached
+        return _build(m, split, k)
     return store.cached(f'items_{m}_{split}_k{k}', store.beam_files(m, split), [m, split, k, env, _SRC],
                         lambda: _build(m, split, k))
 

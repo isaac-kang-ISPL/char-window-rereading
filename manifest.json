@@ -1,11 +1,11 @@
 {
   "component": "legit-paper",
-  "commit": "c1905b2b89934098f8c2755b7fe7e5178c5e2c0a",
+  "commit": "a02c42eb105353ac17d3e650818ec3a6af6a0552",
   "dirty": [],
   "files": [
     {
       "path": "DATA_FILES.json",
-      "sha256": "3ea3ac6a0363b117b4a81ac4ab730ee666abb0cf273b8d3f32e26e1ddb3acc3e"
+      "sha256": "ce47bc46e9bf0a8760a685d19efe35ea666baa083ca48bc5e10fac042ea7bc50"
     },
     {
       "path": "LICENSE",
@@ -17,7 +17,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "c2b8b29fd232297a4726ad29ba995afed1557fef71e24849e92ab2d37c88033c"
+      "sha256": "267b5ce2a1ecf867700a2592012a938eda6742cbab2bfa5cde22e3fa4ebb28d2"
     },
     {
       "path": "assets/fig1_framework.png",
@@ -376,28 +376,20 @@
       "sha256": "db8c8fab5239daa5640ea5f467bb5212364c06403fbd722353c70242e7faef75"
     },
     {
-      "path": "tools/experiments/rescore/condition_table.py",
-      "sha256": "687cd6f179cd7b23c7d4433bc202f2acbb79195c06d90169913eea0565e2340d"
-    },
-    {
-      "path": "tools/experiments/rescore/main_table.py",
-      "sha256": "d107a6d6259ad15d5f4bafa253cec2aa85b5eec51960dfab6d415bfb2edc7939"
+      "path": "tools/experiments/rescore/paper_tables.py",
+      "sha256": "95bb86825246517f9b43c86fd551e2371639b516321f3f130fc08bc180d4d665"
     },
     {
       "path": "tools/experiments/rescore/recorded.py",
-      "sha256": "4c71548b466632510a814ba894ee74f035f08c39333c635b452a00dcc5ace2d2"
+      "sha256": "fc2190c09c48c03347b606666f70bb5dfef56b98fa86e6dd5ec5a7ba7ea4288a"
     },
     {
       "path": "tools/experiments/rescore/reproduce.py",
-      "sha256": "2d92ad235ed136a19bc192567d6c5987338524d773ecf93d824c58873efa5f62"
+      "sha256": "3fc967add4a1992887a5150eb8faea958e6f541e3026befe2d60b979fb308e8c"
     },
     {
       "path": "tools/rescore/__init__.py",
       "sha256": "86382dff3505a66c5d1a6ae9cfd7eb536c4878ee40d0b41573c2e3d362b46406"
-    },
-    {
-      "path": "tools/rescore/ablation.py",
-      "sha256": "cd6bb44ce03c2a31e39ed0314263cc7d6c0df26fbaef47f4ecb2cdea6bb36aa2"
     },
     {
       "path": "tools/rescore/cli.py",
@@ -437,7 +429,7 @@
     },
     {
       "path": "tools/rescore/hypotheses.py",
-      "sha256": "35f2c10f3bccc9ba245b6612e548f86f202bb3e78bd8f4df225014890e0ab03f"
+      "sha256": "4929ad95d16d11e2ccf6cde0e95a48820511367a9f1c835dbc4e9e613dee8316"
     },
     {
       "path": "tools/rescore/lm.py",
@@ -477,7 +469,7 @@
     },
     {
       "path": "tools/rescore/store.py",
-      "sha256": "6e432d4eaf0616f9badccfd268df171621bf806f6c55b70f8af45c16d253cc47"
+      "sha256": "8d7adebe1676bd29de411926b028dd1ddf6e50e2d72ff19da90d27670cb3af14"
     },
     {
       "path": "tools/rescore/window.py",
@@ -499,10 +491,12 @@
     "weights",
     "tools/rescore/context_pruning.py",
     "tools/rescore/ilm.py",
+    "tools/rescore/ablation.py",
     "openrec/modeling/legit/",
     "tools/experiments/rescore/analysis.py",
     "tools/experiments/rescore/byt5_segment_type.py",
     "tools/experiments/rescore/candidate_lambda.py",
+    "tools/experiments/rescore/condition_table.py",
     "tools/experiments/rescore/correction_gallery.py",
     "tools/experiments/rescore/coverage.py",
     "tools/experiments/rescore/fig_decisions.py",
@@ -515,6 +509,7 @@
     "tools/experiments/rescore/independent_baselines.py",
     "tools/experiments/rescore/length_and_sensitivity.py",
     "tools/experiments/rescore/macro_bootstrap.py",
+    "tools/experiments/rescore/main_table.py",
     "tools/experiments/rescore/new_benchmarks.py",
     "tools/experiments/rescore/other_recognizers.py",
     "tools/experiments/rescore/other_recognizers_ilme.py",
@@ -535,5 +530,5 @@
     "tools/experiments/rescore/window_runs.py",
     "tools/experiments/rescore/window_tokens.py"
   ],
-  "scope": "Window re-reading of beam hypotheses (tools/rescore) and the reproduction of Tables 2, 3 and 7."
+  "scope": "Window re-reading of beam hypotheses (tools/rescore) and the reproduction of the SVTRv2-AR accuracy values of the manuscript tables (main table, comparison with published methods, image-conditioned table)."
 }
