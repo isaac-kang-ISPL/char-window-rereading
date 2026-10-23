@@ -1,11 +1,11 @@
 {
   "component": "legit-paper",
-  "commit": "a02c42eb105353ac17d3e650818ec3a6af6a0552",
+  "commit": "6b5e7aaeefa314c4fec802260c19a16d5b113ab2",
   "dirty": [],
   "files": [
     {
       "path": "DATA_FILES.json",
-      "sha256": "ce47bc46e9bf0a8760a685d19efe35ea666baa083ca48bc5e10fac042ea7bc50"
+      "sha256": "47c3823360ed8489c89295f6e2a606187688ad829a6017669bce921f0b9462ec"
     },
     {
       "path": "LICENSE",
@@ -17,7 +17,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "267b5ce2a1ecf867700a2592012a938eda6742cbab2bfa5cde22e3fa4ebb28d2"
+      "sha256": "ea3fd5df5175ed7c2af461c4d6c0e8161530a1c267d6459fd5bdc847b873b52b"
     },
     {
       "path": "assets/fig1_framework.png",
@@ -377,7 +377,7 @@
     },
     {
       "path": "tools/experiments/rescore/paper_tables.py",
-      "sha256": "95bb86825246517f9b43c86fd551e2371639b516321f3f130fc08bc180d4d665"
+      "sha256": "fd3d8058c17c4c5f576d093fb409bfff4aaee0786bce9aab157587147a4ced08"
     },
     {
       "path": "tools/experiments/rescore/recorded.py",
@@ -385,7 +385,7 @@
     },
     {
       "path": "tools/experiments/rescore/reproduce.py",
-      "sha256": "3fc967add4a1992887a5150eb8faea958e6f541e3026befe2d60b979fb308e8c"
+      "sha256": "aee20e989c0914f43a2e0ebfef2009a017a2af3aff67761f3a2f9f2971c8c204"
     },
     {
       "path": "tools/rescore/__init__.py",
@@ -530,5 +530,5 @@
     "tools/experiments/rescore/window_runs.py",
     "tools/experiments/rescore/window_tokens.py"
   ],
-  "scope": "Window re-reading of beam hypotheses (tools/rescore) and the reproduction of the SVTRv2-AR accuracy values of the manuscript tables (main table, comparison with published methods, image-conditioned table)."
+  "scope": "Window re-reading of beam hypotheses (tools/rescore) and the reproduction of the accuracy values of the manuscript tables (main table, comparison with published methods, comparison across recognizers, image-conditioned table) and of the paired bootstrap intervals of the main table and the comparison across recognizers."
 }
