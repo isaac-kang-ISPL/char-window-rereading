@@ -9,6 +9,39 @@ import re
 # lmdb and PIL are imported inside the functions: the normalisation and TSV half of this module needs neither.
 
 
+# ── Settings from the environment ───────────────────────────────────────────
+# The settings of the code are environment variables named CWR_<NAME>. Each is also read under its earlier name
+# LEGIT_<NAME> when the CWR_ name is not set, so scripts and shells that still use the earlier names keep working.
+NEW_PREFIX, OLD_PREFIX = 'CWR_', 'LEGIT_'
+CACHE_NAME, OLD_CACHE_NAME = 'cwr_rescore', OLD_PREFIX.lower() + 'rescore'     # folders under ~/.cache
+
+
+def env(var, default=None):
+    """os.environ.get(var, default), where a CWR_<NAME> variable that is not set is read as LEGIT_<NAME>."""
+    value = os.environ.get(var)
+    if value is None and var.startswith(NEW_PREFIX):
+        value = os.environ.get(OLD_PREFIX + var[len(NEW_PREFIX):])
+    return default if value is None else value
+
+
+_env = env                                            # local_path has a parameter named env
+
+
+def set_env(var, value):
+    """os.environ[var] = value; a CWR_<NAME> variable also sets LEGIT_<NAME>, so code that reads the earlier name sees
+    the same value."""
+    os.environ[var] = str(value)
+    if var.startswith(NEW_PREFIX):
+        os.environ[OLD_PREFIX + var[len(NEW_PREFIX):]] = str(value)
+
+
+def cache_dir():
+    """Default cache folder ~/.cache/cwr_rescore; a cache under the earlier name ~/.cache/legit_rescore is used while
+    only that one exists (the cache is keyed by content, so either holds the same tables)."""
+    new, old = (os.path.join(os.path.expanduser('~'), '.cache', n) for n in (CACHE_NAME, OLD_CACHE_NAME))
+    return old if os.path.isdir(old) and not os.path.isdir(new) else new
+
+
 # ── Locations outside the code ──────────────────────────────────────────────
 # Each location resolves as: environment variable > `local_paths.json` at the repository root (a research checkout;
 # a release does not ship it) > the release default (relative to the repository root). Only JSON is read here — no
@@ -18,9 +51,9 @@ LOCAL_PATHS = os.path.join(REPO_ROOT, 'local_paths.json')
 PATH_ENV = {'data_root': 'STR_DATA_ROOT',             # LMDB benchmarks: <root>/<dataset>/data.mdb
             'scores_root': 'STR_SCORES_ROOT',         # <root>/<dataset>/STR_models/<model>/str_scores.tsv
             'charout_root': 'STR_CHAROUT_ROOT',       # stored attention records: <root>/<dataset>/svtrv2-ar.lmdb
-            'ar_checkpoint': 'LEGIT_AR_CHECKPOINT'}   # SVTRv2-AR checkpoint (UnionST-U14MFilter)
+            'ar_checkpoint': 'CWR_AR_CHECKPOINT'}     # SVTRv2-AR checkpoint (UnionST-U14MFilter)
 RELEASE_PATHS = {'data_root': 'data/openocr', 'scores_root': 'data/str_scores', 'charout_root': 'data/charout'}
-#                 (no default checkpoint: a release sets LEGIT_AR_CHECKPOINT or passes --checkpoint)
+#                 (no default checkpoint: a release sets CWR_AR_CHECKPOINT or passes --checkpoint)
 _LOCAL = None
 
 
@@ -48,8 +81,8 @@ def local_path(name, env=True):
     (None if a name has neither). A `local_paths.json` value is a path or a list of candidates: the first that exists,
     else the last. Existence is checked where the path is used (`missing`), not here."""
     var = PATH_ENV.get(name)
-    if env and var and os.environ.get(var):
-        return os.path.expanduser(os.environ[var])
+    if env and var and _env(var):
+        return os.path.expanduser(_env(var))
     value = local_paths().get(name, RELEASE_PATHS.get(name))
     if value is None:
         return None

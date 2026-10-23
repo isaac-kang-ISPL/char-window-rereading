@@ -1,11 +1,11 @@
 {
-  "component": "legit-paper",
-  "commit": "6b5e7aaeefa314c4fec802260c19a16d5b113ab2",
+  "component": "char-window-rereading",
+  "commit": "510962ab66c2afa3b7a332da6d8ed787c1d74414",
   "dirty": [],
   "files": [
     {
       "path": "DATA_FILES.json",
-      "sha256": "47c3823360ed8489c89295f6e2a606187688ad829a6017669bce921f0b9462ec"
+      "sha256": "d49be4817047f423101a3c9eb8a76bd28be8056d44f1a344040f4b79d127a8b7"
     },
     {
       "path": "LICENSE",
@@ -17,7 +17,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "ea3fd5df5175ed7c2af461c4d6c0e8161530a1c267d6459fd5bdc847b873b52b"
+      "sha256": "313e3a309ac0fc844493b6e6d4ed6f7fa79608b2ed15bc3828fd3c7b7842f1e0"
     },
     {
       "path": "assets/fig1_framework.png",
@@ -29,7 +29,7 @@
     },
     {
       "path": "openrec/modeling/__init__.py",
-      "sha256": "2a88331c4c34e61ab65185302f7456c957efa32d82980767a7f84ed2b3efb4a2"
+      "sha256": "c26e2015bfaf8a2c5a1c86349e29090969a230acb81cff7ea7dd387442a0c9c6"
     },
     {
       "path": "openrec/modeling/base_recognizer.py",
@@ -353,7 +353,7 @@
     },
     {
       "path": "tests/test_rescore_core.py",
-      "sha256": "fb95feccb2d8cdedceaa071ccb928698dc7c8ab3d548acfde04a3a82abbe5cde"
+      "sha256": "35be801e9ec7bbcd260ce9f1fd73b57f692dd6d1536b0c9b088fc20aeff3528d"
     },
     {
       "path": "tools/__init__.py",
@@ -361,7 +361,7 @@
     },
     {
       "path": "tools/_io.py",
-      "sha256": "f85cc3a28bf2e4f758ec563db768e32f3c6d53ebced2450083999bc2dd7a0e8a"
+      "sha256": "b603c7b01492b7fabe03d02fe22875da103c3eb7be83542dece5c32a6033dd4e"
     },
     {
       "path": "tools/experiments/__init__.py",
@@ -369,15 +369,15 @@
     },
     {
       "path": "tools/experiments/rescore/__init__.py",
-      "sha256": "7be19ec9fd04ca8383ed165aefd814a0fc055f8a087feb67c304bdbe36e0bb27"
+      "sha256": "4794b75bd0ed8e37f5aabd51ebd705bdd02059498e79e014d47785475d0ae6d5"
     },
     {
       "path": "tools/experiments/rescore/common.py",
-      "sha256": "db8c8fab5239daa5640ea5f467bb5212364c06403fbd722353c70242e7faef75"
+      "sha256": "8ee4cc88c434db80225cd4a5253b300a3ab62b7414977bdff985fcb2e276eb78"
     },
     {
       "path": "tools/experiments/rescore/paper_tables.py",
-      "sha256": "fd3d8058c17c4c5f576d093fb409bfff4aaee0786bce9aab157587147a4ced08"
+      "sha256": "6257c13e9d7bd42b1029b5d883889e9ee4682574a100b2e369215c763b37ba72"
     },
     {
       "path": "tools/experiments/rescore/recorded.py",
@@ -385,11 +385,11 @@
     },
     {
       "path": "tools/experiments/rescore/reproduce.py",
-      "sha256": "aee20e989c0914f43a2e0ebfef2009a017a2af3aff67761f3a2f9f2971c8c204"
+      "sha256": "e3b280eff0ede161a82ad9ddfdc53358f8f85609d8c691e419ef78dd43ce26a4"
     },
     {
       "path": "tools/rescore/__init__.py",
-      "sha256": "86382dff3505a66c5d1a6ae9cfd7eb536c4878ee40d0b41573c2e3d362b46406"
+      "sha256": "8220f6f2efda3c29cf06f71bf678a695b84fd17d62d9f0053ac82b69ef77e95c"
     },
     {
       "path": "tools/rescore/cli.py",
@@ -445,7 +445,7 @@
     },
     {
       "path": "tools/rescore/nbest.py",
-      "sha256": "14167a7a3cb0cc4b67114cc831f193cd7b5a88b6bab7d3fde19979c237f8f50a"
+      "sha256": "04fce724f2f0c8f0896a43f56f1693ec3c285c2ecd03a4b47a7a67a1b20aed49"
     },
     {
       "path": "tools/rescore/pipeline.py",
@@ -457,11 +457,11 @@
     },
     {
       "path": "tools/rescore/region.py",
-      "sha256": "9a25ba4d234100a3ad03fc883c5be6c15067c8d69054d4212716901ed8a0ee3d"
+      "sha256": "0d9e814a5157c8db75f87fb64583cc557f64e8fef27bf7254874d1d86d58c711"
     },
     {
       "path": "tools/rescore/segment.py",
-      "sha256": "61ad5fa48cb28f7de647b5af7dd3ee39d77cba74e0d22d721a805af1123f8e1f"
+      "sha256": "80ffc3faad0095a7ebf0c61a16f61677d8fca87ae07e9b0a0ce78fd49a2d0e29"
     },
     {
       "path": "tools/rescore/select.py",
@@ -469,15 +469,15 @@
     },
     {
       "path": "tools/rescore/store.py",
-      "sha256": "8d7adebe1676bd29de411926b028dd1ddf6e50e2d72ff19da90d27670cb3af14"
+      "sha256": "2fa2b25e7780954ddce8e566063ade818cbeece247be8424548a82f596875803"
     },
     {
       "path": "tools/rescore/window.py",
-      "sha256": "bc8d92bcb73dd7571d7c2f5b0e785011e2d1d0165bb05e1b8824f653dd4b76f1"
+      "sha256": "cc7d6b2fd9c68862b2fab5b4b7077e57569c605bedb82d7df330cdcb82e5b3ec"
     },
     {
       "path": "tools/rescore/window_score.py",
-      "sha256": "bd260e6ffd8dad4fe57050038b97c947bf748e7f13cc3adb5d69894358b92721"
+      "sha256": "6ebe669875d08a328ddeb3d4681d64d56956b753379044f6993871d1c7cfe71a"
     }
   ],
   "excluded": [
@@ -492,7 +492,7 @@
     "tools/rescore/context_pruning.py",
     "tools/rescore/ilm.py",
     "tools/rescore/ablation.py",
-    "openrec/modeling/legit/",
+    "openrec/modeling (retraining wrapper package)",
     "tools/experiments/rescore/analysis.py",
     "tools/experiments/rescore/byt5_segment_type.py",
     "tools/experiments/rescore/candidate_lambda.py",

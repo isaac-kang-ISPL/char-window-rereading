@@ -1,5 +1,5 @@
 """tools.rescore — the array decision rule equals the loop over candidates; normalize_36_paper; reading clusters;
-the C++ segmentation flood equals scikit-image."""
+the C++ segmentation flood equals scikit-image; settings are read under their current and earlier names."""
 from __future__ import annotations
 
 import math
@@ -8,6 +8,7 @@ import string
 
 import numpy as np
 
+from tools import _io
 from tools._io import cluster_key, normalize_paper
 from tools.rescore.decide import Batch, merge_readings
 from tools.rescore.metrics import accuracy, pair, sign_p
@@ -260,3 +261,25 @@ def test_midpoint_windows_match_research_module():
         _same_windows(prepare_windows(rgb, rec), research.prepare(rgb, rec))
         _same_windows(M.prepare(rgb, rec), research.prepare(rgb, rec))
     assert compared > 50
+
+
+def test_settings_current_and_earlier_names(monkeypatch, tmp_path):
+    new, old = _io.NEW_PREFIX + 'RELEASE_TEST', _io.OLD_PREFIX + 'RELEASE_TEST'
+    for var in (new, old):
+        monkeypatch.delenv(var, raising=False)
+    assert _io.env(new) is None and _io.env(new, 'd') == 'd'
+    monkeypatch.setenv(old, 'earlier')
+    assert _io.env(new) == 'earlier'                      # the earlier name is read when the current one is not set
+    monkeypatch.setenv(new, 'current')
+    assert _io.env(new) == 'current' and _io.env('OTHER_RELEASE_TEST', 'd') == 'd'
+    _io.set_env(new, 'both')
+    assert _io.env(new) == 'both' and _io.env(old) == 'both'
+    for var in (new, old):                                # set_env wrote os.environ directly
+        monkeypatch.delenv(var)
+    monkeypatch.setenv('HOME', str(tmp_path))
+    cache = tmp_path / '.cache'
+    assert _io.cache_dir() == str(cache / _io.CACHE_NAME)
+    (cache / _io.OLD_CACHE_NAME).mkdir(parents=True)        # a cache of an earlier release is used while it is the only one
+    assert _io.cache_dir() == str(cache / _io.OLD_CACHE_NAME)
+    (cache / _io.CACHE_NAME).mkdir()
+    assert _io.cache_dir() == str(cache / _io.CACHE_NAME)

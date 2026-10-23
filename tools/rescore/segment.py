@@ -10,9 +10,9 @@ Composition:
 There is no background — every pixel belongs to some position (labels 0..K-1).
 
 Watershed flooding runs in a C++ kernel (`compact_watershed.cpp`) that ports scikit-image 0.26's compact watershed as is —
-on the first call it is built with g++ and placed in `LEGIT_RESCORE_KERNEL_DIR` (default ~/.cache/legit_rescore/kernels).
+on the first call it is built with g++ and placed in `CWR_RESCORE_KERNEL_DIR` (default ~/.cache/cwr_rescore/kernels).
 If building or loading fails, scikit-image's `watershed` is used instead (same labels · slower) and this is noted once on
-stderr — which one ran is given by `backend()`. With `LEGIT_SEGMENT_BACKEND=skimage` scikit-image is used from the start;
+stderr — which one ran is given by `backend()`. With `CWR_SEGMENT_BACKEND=skimage` scikit-image is used from the start;
 with `=cpp` it stops when the kernel is unavailable.
 
 Helper functions for window neighbour decisions: `label_at` (segment a point falls in) · `touching` (segments touching in
@@ -35,6 +35,8 @@ import numpy as np
 from skimage.segmentation import _watershed as _wsmod
 from skimage.segmentation import watershed as _ws
 
+from tools._io import cache_dir, env
+
 #: Disc seed radius — ratio to the position spacing (`unit_w`).
 SEED_R = 0.25
 #: Weight of the distance term in the watershed (compactness of skimage watershed).
@@ -45,10 +47,10 @@ INK_BLUR = 1.0
 #: C++ watershed source · where the built shared library goes · compile options (-ffp-contract=off: multiply-add is
 #: not fused, so the values match the original).
 KERNEL_SRC = Path(__file__).with_name('compact_watershed.cpp')
-KERNEL_DIR = Path(os.environ.get('LEGIT_RESCORE_KERNEL_DIR', str(Path.home() / '.cache' / 'legit_rescore' / 'kernels')))
+KERNEL_DIR = Path(env('CWR_RESCORE_KERNEL_DIR', os.path.join(cache_dir(), 'kernels')))
 CXX_FLAGS = ('-O3', '-std=c++17', '-fPIC', '-shared', '-ffp-contract=off')
 #: Value seeds are queued with — 'terrain' (scikit-image 0.26 · terrain value at that pixel) | '-inf' (scikit-image 0.25).
-SEED_COST = os.environ.get('LEGIT_SEGMENT_SEED', 'terrain')
+SEED_COST = env('CWR_SEGMENT_SEED', 'terrain')
 _FLOOD = None
 _BACKEND = None
 
@@ -196,9 +198,9 @@ def _kernel():
     global _FLOOD, _BACKEND
     if _BACKEND is not None:
         return _FLOOD
-    want = os.environ.get('LEGIT_SEGMENT_BACKEND', 'auto')
+    want = env('CWR_SEGMENT_BACKEND', 'auto')
     if want == 'skimage':
-        _BACKEND = dict(name='skimage', reason='LEGIT_SEGMENT_BACKEND=skimage', library=None)
+        _BACKEND = dict(name='skimage', reason='CWR_SEGMENT_BACKEND=skimage', library=None)
         return None
     try:
         lib = build()

@@ -16,9 +16,9 @@ the original image.
 Public functions: tr_lines · strip_mask · tr_strip · wide_band · current_boxes · trer_region · window_region.
 
 Text-line curve point thinning (`_spaced_indices`) runs as a C++ loop with the same arithmetic (`curve_spacing.cpp`). On
-the first call it is built with g++ in the same place as the segment kernel (`LEGIT_RESCORE_KERNEL_DIR`); if building or
+the first call it is built with g++ in the same place as the segment kernel (`CWR_RESCORE_KERNEL_DIR`); if building or
 loading fails, a Python loop is used instead (same result · slower · `spacing_backend()`).
-With `LEGIT_REGION_BACKEND=python` Python is used from the start; with `=cpp` it stops when the kernel is unavailable.
+With `CWR_REGION_BACKEND=python` Python is used from the start; with `=cpp` it stops when the kernel is unavailable.
 """
 from __future__ import annotations
 
@@ -34,6 +34,8 @@ import cv2
 import numpy as np
 from scipy.ndimage import map_coordinates
 from skimage.filters import threshold_sauvola
+
+from tools._io import env
 
 from tools.rescore.position import (angles, common_min_maps, corner_prior_maps, grid_points, line,
                                     neighbor_competition_maps, px_maps)
@@ -88,9 +90,9 @@ def _spacing_kernel():
     global _SPACING, _SPACING_BACKEND
     if _SPACING_BACKEND is not None:
         return _SPACING
-    want = os.environ.get('LEGIT_REGION_BACKEND', 'auto')
+    want = env('CWR_REGION_BACKEND', 'auto')
     if want == 'python':
-        _SPACING_BACKEND = dict(name='python', reason='LEGIT_REGION_BACKEND=python', library=None)
+        _SPACING_BACKEND = dict(name='python', reason='CWR_REGION_BACKEND=python', library=None)
         return None
     try:
         from tools.rescore.segment import CXX_FLAGS, KERNEL_DIR

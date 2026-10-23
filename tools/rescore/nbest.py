@@ -12,8 +12,8 @@ Both decoders keep the self-attention keys / values of the prefix and the cross-
 output and decode one character per step (`kv`); the recognizer's float32 matrix products run in TF32 on Ampere or newer
 GPUs (`tf32`, `precision`). Defaults: beam 10 · 10, cached keys / values, TF32 — the
 setting of the manuscript's results. The first manuscript version (v1) used beam 20 · 20, the whole prefix re-run at every
-step (as the public `forward_test` · `forward_train`) and fp32 matmuls — `PAPER` (`--paper`, or LEGIT_AR_KV=0
-LEGIT_AR_TF32=0 with --width 20 --token-topk 20).
+step (as the public `forward_test` · `forward_train`) and fp32 matmuls — `PAPER` (`--paper`, or CWR_AR_KV=0
+CWR_AR_TF32=0 with --width 20 --token-topk 20).
 The cached path is the same arithmetic with other matrix shapes and TF32 rounds the products, so values can differ in the
 last digits; on a GPU without TF32 (compute capability below 8.0) the products stay fp32, with a warning, and the run
 records the precision actually used.
@@ -35,19 +35,21 @@ from pathlib import Path
 
 import numpy as np
 
+from tools._io import env
+
 BASE_SHAPE = ((64, 64), (96, 48), (112, 40), (128, 32))
 ROT_RATIO = 1.5
 TOP = 10                                                  # hypotheses kept as candidates
 WIDTH = 10                                                # beam width (manuscript v1 runs: 20)
 TOKEN_TOPK = 10                                           # characters expanded per live hypothesis (manuscript v1 runs: 20)
-KV_ENV = 'LEGIT_AR_KV'                                    # '1' (default) cached keys / values · '0' whole prefix per step
-TF32_ENV = 'LEGIT_AR_TF32'                                # '1' (default) TF32 matmuls in the recognizer · '0' fp32
+KV_ENV = 'CWR_AR_KV'                                      # '1' (default) cached keys / values · '0' whole prefix per step
+TF32_ENV = 'CWR_AR_TF32'                                  # '1' (default) TF32 matmuls in the recognizer · '0' fp32
 PAPER = dict(width=20, token_topk=20, kv=False, tf32=False)   # recognizer setting of the first manuscript version (v1)
 _WARNED = set()
 
 
 def _flag(name):
-    value = os.environ.get(name, '1')
+    value = env(name, '1')
     if value not in ('0', '1'):
         raise ValueError(f'{name} must be 0 or 1')
     return value == '1'

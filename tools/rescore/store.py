@@ -1,6 +1,6 @@
 """Stored inputs of the re-reading experiments — beam lists of each recognizer and the score tables.
 
-Every input lives under one data root (`LEGIT_DATA`, default the repository root) at a public relative path
+Every input lives under one data root (`CWR_DATA`, default the repository root) at a public relative path
 (`beams/…`, `windows/…`, `pll/…`, `benchmarks/…`, `reference/…`) — the layout of the published data archive as unpacked.
 `research_path` maps a public path to the folder that holds it on disk: the same path in a release, the research
 folder name in the research tree (prefix pairs in `research_layout.json` at the repository root, which a release does
@@ -10,7 +10,7 @@ from the stored run read alike.
 Tables that take seconds to assemble (ByT5 PLL over 16 shards, window scores over hundreds of chunk files) are kept
 in a content-keyed disk cache (`cached`): the key covers every file read (path, size, mtime, inode, ctime), the
 arguments, the Python and numpy versions, and the source of this module, so a changed input or rule never returns an
-old table. `LEGIT_RESCORE_CACHE=0` turns the cache off.
+old table. `CWR_RESCORE_CACHE=0` turns the cache off.
 """
 from __future__ import annotations
 
@@ -26,12 +26,14 @@ from pathlib import Path
 
 import numpy as np
 
+from tools._io import cache_dir, env
+
 REPO = Path(__file__).resolve().parents[2]
-DATA = Path(os.environ.get('LEGIT_DATA', str(REPO))).expanduser()
+DATA = Path(env('CWR_DATA', str(REPO))).expanduser()
 API = DATA / 'materials' / 'api'
 TMP = DATA / 'materials' / 'tmp'
-CACHE = Path(os.environ.get('LEGIT_RESCORE_CACHE_DIR', str(Path.home() / '.cache' / 'legit_rescore')))
-USE_CACHE = os.environ.get('LEGIT_RESCORE_CACHE', '1') != '0'
+CACHE = Path(env('CWR_RESCORE_CACHE_DIR', cache_dir()))
+USE_CACHE = env('CWR_RESCORE_CACHE', '1') != '0'
 
 # benchmark sets — order of the macro averages
 CB = ('test/IIIT5k', 'test/SVT', 'test/IC13_857', 'test/IC15_1811', 'test/SVTP', 'test/CUTE80')
@@ -201,7 +203,7 @@ def _need(files, what, where):
     """Stop when a stored input is missing — an empty table would silently turn every decision into a (no window score,
     no beam list)."""
     if not files:
-        raise FileNotFoundError(f'{what}: no input files in {where} (data root {DATA}; set LEGIT_DATA)')
+        raise FileNotFoundError(f'{what}: no input files in {where} (data root {DATA}; set CWR_DATA)')
     return files
 
 
@@ -230,12 +232,12 @@ NATDEV_V2_PUBLIC = 'benchmarks/validation-set.json'             # the same key l
 
 def natdev_v2():
     """The validation set 'natdev' (default natdev10k_v2, user decision 2026-10-22: natdev10k without the 27 images identical
-    to UB General plus ranks 50,001-50,027 of the same order), or None for the original natdev10k. LEGIT_NATDEV_V2 = a JSON
+    to UB General plus ranks 50,001-50,027 of the same order), or None for the original natdev10k. CWR_NATDEV_V2 = a JSON
     file with 'keys' (the validation images, in order) and 'extra_split' (the split name under which the stores hold the images
-    that natdev10k lacks, in the natdev layout); LEGIT_NATDEV_V2=0 selects the original natdev10k. Without the research tree's
+    that natdev10k lacks, in the natdev layout); CWR_NATDEV_V2=0 selects the original natdev10k. Without the research tree's
     key list (a release) the key list of the data root is read (NATDEV_V2_PUBLIC), and without either the original split."""
     default = NATDEV_V2_DEFAULT if NATDEV_V2_DEFAULT.exists() else at(NATDEV_V2_PUBLIC)
-    f = os.environ.get('LEGIT_NATDEV_V2', str(default) if default.exists() else '0')
+    f = env('CWR_NATDEV_V2', str(default) if default.exists() else '0')
     if f in ('', '0', 'natdev10k'):
         return None
     d = json.loads(Path(f).read_text())
@@ -244,7 +246,7 @@ def natdev_v2():
 
 
 def _v2(split, base, extra, sparse=False):
-    """natdev under LEGIT_NATDEV_V2: natdev and the extra split merged, restricted to the listed keys in their order.
+    """natdev under CWR_NATDEV_V2: natdev and the extra split merged, restricted to the listed keys in their order.
     A listed image without input stops the run — a selection never runs on fewer images than the definition. sparse: a store
     that lacks some natdev10k images by construction (own windows: 2 images of TRBA and of SVTRv2-CTC); there only an added
     image without input stops the run, and a natdev10k image keeps the absence it had."""
@@ -256,7 +258,7 @@ def _v2(split, base, extra, sparse=False):
     miss = [k for k in v['keys'] if k not in d and (not sparse or k in v['added'])]
     if miss:
         raise SystemExit(f"validation set {v['name']}: {len(miss)} validation images without input in this store "
-                         f"(split {v['extra']} missing or incomplete), e.g. {miss[:3]}; LEGIT_NATDEV_V2=0 reads the original natdev10k")
+                         f"(split {v['extra']} missing or incomplete), e.g. {miss[:3]}; CWR_NATDEV_V2=0 reads the original natdev10k")
     return {k: d[k] for k in v['keys'] if k in d}
 
 
@@ -404,13 +406,13 @@ def ilm_table(m):
 
 
 def natdev_merge(split, load):
-    """load(split) of a per-image store; under LEGIT_NATDEV_V2 natdev also reads load(<extra split>) and keeps the listed keys
+    """load(split) of a per-image store; under CWR_NATDEV_V2 natdev also reads load(<extra split>) and keeps the listed keys
     (the hook of the scripts whose stores are not read through this module)."""
     return _v2(split, load(split), load)
 
 
 def window_table(tag):
-    """window_table_ of the tag; under LEGIT_NATDEV_V2 a tag with the segment 'natdev' (trwnn_natdev, wf2_mwargmax_natdev_b10t10tf32,
+    """window_table_ of the tag; under CWR_NATDEV_V2 a tag with the segment 'natdev' (trwnn_natdev, wf2_mwargmax_natdev_b10t10tf32,
     ...) also reads the same tag with the extra split in that place."""
     parts = tag.split('_')
     if 'natdev' in parts and natdev_v2():
@@ -424,7 +426,7 @@ def window_table_(tag):
     `<tag>` first, then `<tag>_gfix` (hypotheses added when the evaluation candidates took the validation rule; fills
     only missing hypotheses), then `<tag>_afix` (images whose windows were rebuilt from a; replaces the image)."""
     main, gfix, afix = WINDOWS / tag, WINDOWS / f'{tag}_gfix', WINDOWS / f'{tag}_afix'
-    use_afix = os.environ.get('LEGIT_AFIX', '1') != '0'
+    use_afix = env('CWR_AFIX', '1') != '0'
     files = [f for d in (main, gfix) + ((afix,) if use_afix else ()) for f in sorted(d.glob('*.json')) if '_limit' not in f.name]
     _need([f for f in files if f.parent == main], f'window table {tag}', main)
 
@@ -459,8 +461,8 @@ def own_window_table(m, split, tag=None):
     if not _complete(main):
         return None
     use_same = _complete(same)
-    use_usual = os.environ.get('LEGIT_OWN_USUAL', '1') != '0' and usual.exists()
-    use_refine = os.environ.get('LEGIT_OWN_REFINE', '1') != '0' and _complete(refine)
+    use_usual = env('CWR_OWN_USUAL', '1') != '0' and usual.exists()
+    use_refine = env('CWR_OWN_REFINE', '1') != '0' and _complete(refine)
     use_refine_usual = use_refine and use_usual and refine_usual.exists()
     files = [f for d, on in ((main, True), (same, use_same), (usual, use_usual), (refine, use_refine),
                              (refine_usual, use_refine_usual)) if on
@@ -493,7 +495,7 @@ def own_window_table(m, split, tag=None):
 
 def window_files(tag):
     """Files `window_table(tag)` reads — for the cache key of a table built from it."""
-    use_afix = os.environ.get('LEGIT_AFIX', '1') != '0'
+    use_afix = env('CWR_AFIX', '1') != '0'
     dirs = (WINDOWS / tag, WINDOWS / f'{tag}_gfix') + ((WINDOWS / f'{tag}_afix',) if use_afix else ())
     return [f for d in dirs for f in sorted(d.glob('*.json')) if '_limit' not in f.name]
 

@@ -1,4 +1,4 @@
-"""Character-window re-reading of beam hypotheses — the method of the LEGIT manuscript.
+"""Character-window re-reading of beam hypotheses — the method of the CWR manuscript.
 
 A scene-text recognizer (SVTRv2-AR) returns its greedy transcript a and a beam of hypotheses. Every hypothesis y in
 the top K of the beam (K = 10; beam width 10, 10 characters expanded per hypothesis) is scored against a:

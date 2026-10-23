@@ -5,13 +5,14 @@ import json
 import os
 from pathlib import Path
 
+from tools._io import env
 from tools.rescore import hypotheses as H
 from tools.rescore import store
 from tools.rescore.decide import batch
 
 def out_root():
-    """Output root — read at call time, so a driver can set LEGIT_RESCORE_OUT after the modules are imported."""
-    return Path(os.environ.get('LEGIT_RESCORE_OUT', str(store.DATA))).expanduser()
+    """Output root — read at call time, so a driver can set CWR_RESCORE_OUT after the modules are imported."""
+    return Path(env('CWR_RESCORE_OUT', str(store.DATA))).expanduser()
 
 
 def out(rel):
@@ -21,9 +22,9 @@ def out(rel):
 
 def result(rel):
     """A result an experiment reads from an earlier experiment — the output root first, else the data root (not in a
-    full `reproduce` run, which must read its own results: LEGIT_RESCORE_STRICT=1)."""
+    full `reproduce` run, which must read its own results: CWR_RESCORE_STRICT=1)."""
     p = out_root() / store.research_path(rel)
-    if p.exists() or os.environ.get('LEGIT_RESCORE_STRICT') == '1':
+    if p.exists() or env('CWR_RESCORE_STRICT') == '1':
         return p
     return store.at(rel)
 
@@ -93,8 +94,8 @@ def window_delta(tag, b):
 
 
 def workers():
-    """Worker processes a stage may use (LEGIT_STAGE_WORKERS · reproduce sets cores / parallel stages)."""
-    return max(1, int(os.environ.get('LEGIT_STAGE_WORKERS', '1')))
+    """Worker processes a stage may use (CWR_STAGE_WORKERS · reproduce sets cores / parallel stages)."""
+    return max(1, int(env('CWR_STAGE_WORKERS', '1')))
 
 
 def pmap(fn, args, n=None, chunksize=1):

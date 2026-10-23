@@ -19,7 +19,7 @@ all hypotheses · when a substring cannot be measured in a window, that window t
 adds −1e30 in place, in window order — as in the stored scores) ·
 an image whose windows cannot be built (`window.prepare` skips it) has no key in the result.
 The recognizer's float32 matmuls default to TF32 (Ampere or newer · `nbest.precision`). The paper's stored scores are
-fp32 — `tf32=False` · `--fp32` · LEGIT_AR_TF32=0 (`PAPER_V1_RUN` includes fp32).
+fp32 — `tf32=False` · `--fp32` · CWR_AR_TF32=0 (`PAPER_V1_RUN` includes fp32).
 
 `SCORE_PAPER_V1` gives the stored scores of the earlier window definition bit for bit on the same machine and batches as the research code that
 produced them; the comparison lives in the research repository.
@@ -149,18 +149,18 @@ def forced_scores(decoder, memory, requests, char_index, candidate_batch, max_le
 
 
 def checkpoint_path(checkpoint=None):
-    """The SVTRv2-AR checkpoint — `checkpoint`, else LEGIT_AR_CHECKPOINT > `local_paths.json` (`tools._io.local_path`;
+    """The SVTRv2-AR checkpoint — `checkpoint`, else CWR_AR_CHECKPOINT > `local_paths.json` (`tools._io.local_path`;
     a release has no default). Stops with the setting to use when the file is not there."""
     from tools._io import local_path
     path = checkpoint or local_path('ar_checkpoint')
     if not path or not Path(path).is_file():
         raise FileNotFoundError('SVTRv2-AR checkpoint (UnionST-U14MFilter.pth) ' + (f'not found: {path}' if path else 'not set')
-                                + ' — set LEGIT_AR_CHECKPOINT or pass --checkpoint')
+                                + ' — set CWR_AR_CHECKPOINT or pass --checkpoint')
     return Path(path)
 
 
 def __getattr__(name):
-    """`CHECKPOINT` (LEGIT_AR_CHECKPOINT > `local_paths.json`) is resolved when it is read, so a release without a
+    """`CHECKPOINT` (CWR_AR_CHECKPOINT > `local_paths.json`) is resolved when it is read, so a release without a
     checkpoint imports cleanly and stops only where the checkpoint is needed; `load_reader` also checks that it exists."""
     if name == 'CHECKPOINT':
         from tools._io import local_path
@@ -293,7 +293,7 @@ def score_windows(records, hyps, model, char_index, device, cand_batch=CANDIDATE
     in that window).
     When the record has a prebuilt plan (`plan_record`) that matches this call, it is used (less serial Python work in the
     GPU process · the same values).
-    tf32: matmul precision of the recognizer (`nbest.precision` · None → LEGIT_AR_TF32 · default TF32)."""
+    tf32: matmul precision of the recognizer (`nbest.precision` · None → CWR_AR_TF32 · default TF32)."""
     import torch
     from tools.rescore import nbest
     if aggregation not in AGGREGATIONS:
@@ -484,7 +484,7 @@ def run(pool_rows, hyps, out, device, *, data_root=None, charout_root=None, boxe
     process runs only the encoder · decoder and the aggregation.
     There is one worker pool for the whole run, and the window preparation of the next batch overlaps the GPU scoring even
     when the dataset · 5,000-image chunk changes (`_stream`).
-    tf32: matmul precision of the recognizer (None → LEGIT_AR_TF32 · default TF32) — the value actually used is recorded
+    tf32: matmul precision of the recognizer (None → CWR_AR_TF32 · default TF32) — the value actually used is recorded
     in the definition of the raw-score copy ·
     checkpoint: recognizer weights (None → `checkpoint_path`)."""
     from tools._io import local_path
@@ -619,7 +619,7 @@ def main(argv=None):
     ap.add_argument('--hyps', type=Path, required=True, help='JSON {key: [y, …]} — key = "<dataset>#<sample_idx>"')
     ap.add_argument('--out', type=Path, required=True)
     ap.add_argument('--device', default='cuda:0')
-    ap.add_argument('--checkpoint', type=Path, default=None, help='SVTRv2-AR checkpoint (default: LEGIT_AR_CHECKPOINT)')
+    ap.add_argument('--checkpoint', type=Path, default=None, help='SVTRv2-AR checkpoint (default: CWR_AR_CHECKPOINT)')
     ap.add_argument('--workers', type=int, default=14)
     ap.add_argument('--shard', default='0/1')
     ap.add_argument('--boxes', type=Path, default=None,

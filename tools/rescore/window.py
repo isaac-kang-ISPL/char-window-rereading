@@ -54,7 +54,7 @@ def method_version(region='trer', hops=HOPS, fallback='trw15', neighbour='tr', f
                    ptl='original', segmentation='watershed', rotate=True, boundary=True, aggregation='sum'):
     """The same string as the research-path version name — the `method_version` column of the paper tables
     (wconstruct.json etc.).
-    region takes the research-path LEGIT_W_REGION value as is ('trer' · 'r'/'tre' · 'band_wide15' · 'none' etc.).
+    region takes the research-path window region value as is ('trer' · 'r'/'tre' · 'band_wide15' · 'none' etc.).
     The keyword defaults are the earlier window definition, so the old names stay unchanged — the new definition adds a suffix for each of these
     columns (-ptlr · -near · -norot · -core · -cov):
     `method_version('band_wide15', ptl='refined', segmentation='nearest', rotate=False, boundary=False, aggregation='coverage')`."""

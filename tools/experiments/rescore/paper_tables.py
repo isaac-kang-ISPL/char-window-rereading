@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Accuracy values of the SVTRv2-AR tables of the manuscript, recomputed from the stored inputs.
 
-Inputs (data root `LEGIT_DATA`): SVTRv2-AR beam lists (beam 10 · 10: the greedy transcript a and the top 10 hypotheses),
+Inputs (data root `CWR_DATA`): SVTRv2-AR beam lists (beam 10 · 10: the greedy transcript a and the top 10 hypotheses),
 the ByT5-XL PLL tables, the window scores of the MW3 windows, for the image-conditioned table the stored answers of the
 judge (Qwen3.5-27B-GPTQ-Int4), and for the comparison across recognizers the beam lists of TRBA, PARSeq, MDiff4STR and
 SVTRv2-CTC with the window scores of their own MW3 windows. Word accuracy follows normalize_36_paper (ASCII letters and digits, case-insensitive); CB

@@ -4,7 +4,7 @@
 Stages run in dependency order. With --jobs > 1 the stored inputs shared by most stages (SVTRv2-AR validation and
 evaluation lists, ByT5 PLL, default window scores) are loaded once and the stages run in forked workers.
 
-    python -m tools.experiments.rescore.reproduce --out /tmp/legit_repro [--jobs 8] [--ref <tree>] [--only a,b]
+    python -m tools.experiments.rescore.reproduce --out /tmp/cwr_repro [--jobs 8] [--ref <tree>] [--only a,b]
     python -m tools.experiments.rescore.reproduce --list
 Results land under --out at the paths the manuscript generator reads; --ref is compared byte for byte, and the run exits
 non-zero when a file differs. The default reference is `<data root>/reference` — the stored results of the manuscript run
@@ -21,6 +21,15 @@ import os
 import sys
 import time
 from pathlib import Path
+
+from tools import _io                                     # settings CWR_<NAME> (`_io.env`, `_io.set_env`)
+
+
+def _setdefault(var, value):
+    """os.environ.setdefault for a setting: a value set under either name is kept."""
+    if _io.env(var) is None:
+        _io.set_env(var, value)
+
 
 # (name, module:function, environment, depends on, result file) — every experiment module lists its own stages in
 # `REPRODUCE` (same tuple, function name without the module); this driver collects them, so adding an experiment does not
@@ -91,7 +100,7 @@ def _audit(event, args):
 def run_stage(name):
     _, target, env, _, _ = BY[name]
     os.environ.update(env)
-    rec = os.environ.get('LEGIT_RECORD_INPUTS')
+    rec = _io.env('CWR_RECORD_INPUTS')
     if rec:                                                       # files the stage opens (an audit hook cannot be removed —
         sys.addaudithook(_audit)                                  # the worker process ends with the stage)
     mod, fn = target.split(':')
@@ -105,7 +114,7 @@ def run_stage(name):
 
 def write_inputs(rec, out):
     """Union of the files the stages opened under the data root → <out>/data_inputs.json (path, size, SHA-256): the data a
-    release needs. Run with a fresh cache (LEGIT_RESCORE_CACHE_DIR), or cached tables hide their source files."""
+    release needs. Run with a fresh cache (CWR_RESCORE_CACHE_DIR), or cached tables hide their source files."""
     import hashlib
     import json
     from tools.rescore import store
@@ -128,7 +137,7 @@ def write_inputs(rec, out):
         if rel.startswith(('tools/', 'scripts/', 'configs/', 'openrec/', 'strtrain/', 'tests/')):
             continue                                              # code, not data
         rows.append(dict(path=store.public_path(rel), bytes=p.stat().st_size, sha256=hashlib.sha256(p.read_bytes()).hexdigest()))
-    (Path(out) / 'data_inputs.json').write_text(json.dumps(dict(root='LEGIT_DATA', files=rows), indent=1) + '\n')
+    (Path(out) / 'data_inputs.json').write_text(json.dumps(dict(root='CWR_DATA', files=rows), indent=1) + '\n')
     print(f'data inputs: {len(rows)} files · {sum(r["bytes"] for r in rows) / 1e9:.2f} GB → {Path(out) / "data_inputs.json"}', flush=True)
 
 
@@ -156,7 +165,7 @@ def _available():
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--out', type=Path, help='output root (LEGIT_RESCORE_OUT)')
+    ap.add_argument('--out', type=Path, help='output root (CWR_RESCORE_OUT)')
     ap.add_argument('--ref', type=Path, help='reference tree to compare with (default: the data root)')
     ap.add_argument('--jobs', type=int, default=1)
     ap.add_argument('--only', default='', help='comma-separated stage names (their dependencies must exist in --out or the data root)')
@@ -177,16 +186,16 @@ def main():
                   f'{name:14s} (data not included in the archive)')
         return 0
     if a.out:
-        os.environ['LEGIT_RESCORE_OUT'] = str(a.out.resolve())
+        _io.set_env('CWR_RESCORE_OUT', str(a.out.resolve()))
     if a.record_inputs:
-        os.environ['LEGIT_RECORD_INPUTS'] = str(((a.out or Path('.')).resolve()) / '_opened')
+        _io.set_env('CWR_RECORD_INPUTS', str(((a.out or Path('.')).resolve()) / '_opened'))
         # files opened in a stage's worker processes (common.pmap) are not recorded, and a table cached there would hide its
         # sources — so no workers
-        os.environ['LEGIT_STAGE_WORKERS'] = '1'
+        _io.set_env('CWR_STAGE_WORKERS', '1')
     # OpenMP threads per stage (scikit-learn's boosting reranker) — unlimited, parallel stages oversubscribe a busy machine
     os.environ.setdefault('OMP_NUM_THREADS', str(max(1, min(8, (os.cpu_count() or 8) // max(1, a.jobs)))))
     # worker processes inside a stage (common.pmap) — the machine's cores shared among the parallel stages
-    os.environ.setdefault('LEGIT_STAGE_WORKERS', str(max(1, (os.cpu_count() or 8) // max(1, a.jobs))))
+    _setdefault('CWR_STAGE_WORKERS', str(max(1, (os.cpu_count() or 8) // max(1, a.jobs))))
     from tools.rescore import store
     unknown = sorted(set(filter(None, a.only.split(','))) - set(BY))
     if unknown:
@@ -199,8 +208,8 @@ def main():
         raise SystemExit('give --out: the results would be written into the data root (and compared with themselves)')
     todo = _ordered([n for n in avail if not a.only or n in a.only.split(',')])
     if not a.only:
-        os.environ['LEGIT_RESCORE_STRICT'] = '1'        # a full run reads earlier results only from its own output root
-    print(f'data root {store.DATA} · output root {os.environ.get("LEGIT_RESCORE_OUT", store.DATA)} · Python {sys.version.split()[0]} · '
+        _io.set_env('CWR_RESCORE_STRICT', '1')        # a full run reads earlier results only from its own output root
+    print(f'data root {store.DATA} · output root {_io.env("CWR_RESCORE_OUT", store.DATA)} · Python {sys.version.split()[0]} · '
           f'stages {len(todo)} · jobs {a.jobs}', flush=True)
     t0 = time.time()
     if a.record_inputs:                                           # the parent too: it preloads the shared tables before forking
@@ -212,8 +221,8 @@ def main():
         preload()
         print(f'preload {time.time() - t0:.1f}s', flush=True)
         if a.record_inputs:
-            Path(os.environ['LEGIT_RECORD_INPUTS']).mkdir(parents=True, exist_ok=True)
-            (Path(os.environ['LEGIT_RECORD_INPUTS']) / '_preload.txt').write_text('\n'.join(sorted(_OPENED)) + '\n')
+            Path(_io.env('CWR_RECORD_INPUTS')).mkdir(parents=True, exist_ok=True)
+            (Path(_io.env('CWR_RECORD_INPUTS')) / '_preload.txt').write_text('\n'.join(sorted(_OPENED)) + '\n')
         ctx = mp.get_context('fork')
         done, running, failed = set(), {}, []
         pending = list(todo)
@@ -249,9 +258,9 @@ def main():
         if failed:
             print(f'failed stages: {failed}', flush=True)
     print(f'all stages {time.time() - t0:.1f}s', flush=True)
-    if os.environ.get('LEGIT_RECORD_INPUTS'):
+    if _io.env('CWR_RECORD_INPUTS'):
         from tools.experiments.rescore.common import out_root
-        write_inputs(os.environ['LEGIT_RECORD_INPUTS'], out_root())
+        write_inputs(_io.env('CWR_RECORD_INPUTS'), out_root())
     if a.no_compare:
         return 0
     from tools.experiments.rescore.common import out_root
